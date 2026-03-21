@@ -554,7 +554,7 @@ async function apiGet(params) {
 async function apiPost(body) {
   var r = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(Object.assign({ token: TOKEN }, body))
   });
   return r.json();
