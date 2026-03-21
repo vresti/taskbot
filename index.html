@@ -545,10 +545,13 @@ var confirmCb   = null;
 // ══════════════════════════════════════════════════════════════
 //  API HELPERS
 // ══════════════════════════════════════════════════════════════
-async function apiGet(params) {
-  var q = new URLSearchParams(Object.assign({ token: TOKEN }, params));
-  var r = await fetch(API_URL + '?' + q);
-  return r.json();
+async function enviarMail(subject, detalle) {
+  if (!colabActual || !colabActual.email) { toast('Sin email registrado', '⚠️'); return; }
+  try {
+    var r = await apiPost({ action:'enviarMail', email: colabActual.email, subject, detalle });
+    if (r.status === 'ok') toast('Mail enviado', '✉️');
+    else toast('Error: ' + r.msg, '❌');
+  } catch(e) { toast('Sin conexión', '❌'); }
 }
 
 async function apiPost(body) {
