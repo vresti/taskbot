@@ -5,25 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
 <title>TaskBot</title>
 <style>
-/* ── Reset & variables ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:           #0b141a;
-  --panel:        #111b21;
-  --header:       #202c33;
-  --hover:        #2a3942;
-  --card:         #1f2c34;
-  --text:         #e9edef;
-  --sub:          #8696a0;
-  --accent:       #00a884;
-  --danger:       #ef5350;
-  --warn:         #f59e0b;
-  --divider:      #2a3942;
-  --input:        #2a3942;
-  --modal-bg:     rgba(0,0,0,.7);
-  --radius:       12px;
-  --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --bg:        #0b141a;
+  --panel:     #111b21;
+  --header:    #202c33;
+  --hover:     #2a3942;
+  --card:      #1f2c34;
+  --text:      #e9edef;
+  --sub:       #8696a0;
+  --accent:    #00a884;
+  --danger:    #ef5350;
+  --divider:   #2a3942;
+  --input:     #2a3942;
+  --modal-bg:  rgba(0,0,0,.7);
+  --radius:    12px;
+  --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 html, body {
@@ -35,7 +33,6 @@ html, body {
   overflow: hidden;
 }
 
-/* ── Layout principal ──────────────────────────--────────────── */
 #app {
   display: flex;
   height: 100vh;
@@ -44,7 +41,6 @@ html, body {
   position: relative;
 }
 
-/* ── Pantalla base ─────────────────────────────────────────── */
 .screen {
   position: absolute;
   top: 0; left: 0;
@@ -59,7 +55,6 @@ html, body {
 #screen-tareas { transform: translateX(100%); z-index: 2; }
 #screen-tareas.active { transform: translateX(0); }
 
-/* ── Header ────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -69,12 +64,7 @@ html, body {
   min-height: 60px;
   flex-shrink: 0;
 }
-
-.header h1 {
-  font-size: 18px;
-  font-weight: 600;
-  flex: 1;
-}
+.header h1 { font-size: 18px; font-weight: 600; flex: 1; }
 
 .back-btn {
   background: none;
@@ -84,11 +74,6 @@ html, body {
   cursor: pointer;
   padding: 4px 8px 4px 0;
   line-height: 1;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
 }
 
 .icon-btn {
@@ -104,16 +89,10 @@ html, body {
 }
 .icon-btn:hover { background: var(--hover); color: var(--text); }
 
-/* ── Lista scrollable ──────────────────────────────────────── */
-.list {
-  flex: 1;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
+.list { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
 .list::-webkit-scrollbar { width: 4px; }
 .list::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; }
 
-/* ── Colaborador row ───────────────────────────────────────── */
 .colab-row {
   display: flex;
   align-items: center;
@@ -128,46 +107,24 @@ html, body {
 .colab-row:active { background: var(--divider); }
 
 .avatar {
-  width: 46px;
-  height: 46px;
+  width: 46px; height: 46px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
-  letter-spacing: .5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 700;
+  color: #fff; flex-shrink: 0;
 }
 
 .colab-info { flex: 1; min-width: 0; }
-.colab-name {
-  font-size: 15px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.colab-sub {
-  font-size: 13px;
-  color: var(--sub);
-  margin-top: 2px;
-}
+.colab-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.colab-sub  { font-size: 13px; color: var(--sub); margin-top: 2px; }
 
 .badge {
   background: var(--accent);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 10px;
-  min-width: 20px;
-  text-align: center;
+  color: #fff; font-size: 11px; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
 }
 .badge.zero { background: var(--hover); color: var(--sub); }
 
-/* ── Tarea card ────────────────────────────────────────────── */
 .tarea-card {
   background: var(--card);
   margin: 10px 12px;
@@ -175,298 +132,167 @@ html, body {
   padding: 12px 14px;
   border-left: 3px solid var(--accent);
 }
-
-.tarea-subject {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 5px;
-  line-height: 1.3;
-}
-
-.tarea-detalle {
-  font-size: 13px;
-  color: var(--sub);
-  line-height: 1.5;
-  margin-bottom: 10px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.tarea-btns {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  align-items: center;
-}
+.tarea-subject { font-size: 14px; font-weight: 600; margin-bottom: 5px; line-height: 1.3; }
+.tarea-detalle { font-size: 13px; color: var(--sub); line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; }
+.tarea-btns    { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: none;
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity .2s, transform .1s;
-  letter-spacing: .3px;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; border-radius: 20px;
+  padding: 6px 14px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s, transform .1s;
 }
-.btn:active { transform: scale(.96); }
+.btn:active  { transform: scale(.96); }
+.btn:hover   { opacity: .85; }
+.btn-ws      { background: #00a884; color: #fff; }
+.btn-mail    { background: #1976d2; color: #fff; }
+.btn-del     { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 
-.btn-ws    { background: #00a884; color: #fff; }
-.btn-mail  { background: #1976d2; color: #fff; }
-.btn-del   { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-.btn:hover { opacity: .85; }
-
-/* ── FAB ───────────────────────────────────────────────────── */
 .fab {
-  position: fixed;
-  bottom: 24px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 26px;
-  border: none;
-  cursor: pointer;
+  position: fixed; bottom: 24px; right: 20px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  font-size: 26px; border: none; cursor: pointer;
   box-shadow: 0 4px 16px rgba(0,0,0,.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  transition: transform .2s, opacity .2s;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10; transition: transform .2s, opacity .2s;
 }
-.fab:hover   { transform: scale(1.08); }
-.fab:active  { transform: scale(.95); }
-.fab.hidden  { opacity: 0; pointer-events: none; }
+.fab:hover  { transform: scale(1.08); }
+.fab:active { transform: scale(.95); }
+.fab.hidden { opacity: 0; pointer-events: none; }
 
-/* ── Modal ─────────────────────────────────────────────────── */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: var(--modal-bg);
   z-index: 100;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none;
   transition: opacity .25s;
 }
-.modal-overlay.open {
-  opacity: 1;
-  pointer-events: all;
-}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
 
 .modal {
   background: var(--header);
-  width: 100%;
-  max-width: 520px;
+  width: 100%; max-width: 520px;
   border-radius: 20px 20px 0 0;
   padding: 20px 20px 30px;
   transform: translateY(100%);
   transition: transform .28s cubic-bezier(.4,0,.2,1);
 }
 .modal-overlay.open .modal { transform: translateY(0); }
+.modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 18px; color: var(--accent); }
 
-.modal h2 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 18px;
-  color: var(--accent);
-}
-
-.field {
-  margin-bottom: 14px;
-}
+.field { margin-bottom: 14px; }
 .field label {
-  display: block;
-  font-size: 12px;
-  color: var(--sub);
-  margin-bottom: 5px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: .5px;
+  display: block; font-size: 12px; color: var(--sub);
+  margin-bottom: 5px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .5px;
 }
 .field input,
 .field textarea {
-  width: 100%;
-  background: var(--input);
-  border: 1px solid var(--divider);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: var(--text);
-  font-size: 14px;
-  font-family: var(--font);
-  outline: none;
-  transition: border-color .2s;
+  width: 100%; background: var(--input);
+  border: 1px solid var(--divider); border-radius: 8px;
+  padding: 10px 12px; color: var(--text);
+  font-size: 14px; font-family: var(--font);
+  outline: none; transition: border-color .2s;
 }
 .field input:focus,
 .field textarea:focus { border-color: var(--accent); }
-.field textarea {
-  resize: vertical;
-  min-height: 80px;
-  line-height: 1.5;
-}
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
 
-.modal-btns {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-}
+.modal-btns { display: flex; gap: 10px; margin-top: 18px; }
 .btn-primary {
-  flex: 1;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity .2s;
+  flex: 1; background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; padding: 12px;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s;
 }
 .btn-primary:hover { opacity: .85; }
 .btn-cancel {
-  background: var(--hover);
-  color: var(--sub);
-  border: none;
-  border-radius: 8px;
-  padding: 12px 18px;
-  font-size: 14px;
-  cursor: pointer;
+  background: var(--hover); color: var(--sub);
+  border: none; border-radius: 8px;
+  padding: 12px 18px; font-size: 14px; cursor: pointer;
 }
 
-/* ── Toast ─────────────────────────────────────────────────── */
 #toast {
-  position: fixed;
-  bottom: 90px;
-  left: 50%;
+  position: fixed; bottom: 90px; left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: #2a3942;
-  color: var(--text);
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  opacity: 0;
-  transition: opacity .3s, transform .3s;
-  z-index: 200;
-  white-space: nowrap;
+  background: #2a3942; color: var(--text);
+  padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: opacity .3s, transform .3s;
+  z-index: 200; white-space: nowrap;
   box-shadow: 0 4px 16px rgba(0,0,0,.4);
   pointer-events: none;
 }
-#toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ── Empty state ───────────────────────────────────────────── */
 .empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  height: 60%;
-  color: var(--sub);
-  font-size: 14px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; height: 60%;
+  color: var(--sub); font-size: 14px;
 }
 .empty .icon { font-size: 48px; opacity: .4; }
 
-/* ── Confirm overlay ───────────────────────────────────────── */
 #confirm-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: var(--modal-bg);
   z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
 }
 #confirm-overlay.open { opacity: 1; pointer-events: all; }
 
 .confirm-box {
-  background: var(--header);
-  border-radius: 14px;
-  padding: 24px 22px;
-  width: 280px;
-  text-align: center;
+  background: var(--header); border-radius: 14px;
+  padding: 24px 22px; width: 280px; text-align: center;
 }
 .confirm-box h3 { font-size: 15px; margin-bottom: 8px; }
 .confirm-box p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; line-height: 1.5; }
 .confirm-btns   { display: flex; gap: 10px; }
 .btn-danger { flex:1; background: var(--danger); color:#fff; border:none; border-radius:8px; padding:11px; font-size:14px; font-weight:600; cursor:pointer; }
-.btn-safe   { flex:1; background: var(--hover);  color:var(--text); border:none; border-radius:8px; padding:11px; font-size:14px; cursor:pointer; }
+.btn-safe   { flex:1; background: var(--hover); color:var(--text); border:none; border-radius:8px; padding:11px; font-size:14px; cursor:pointer; }
 
-/* ── Loading spinner ────────────────────────────────────────── */
-.spinner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
+.spinner { display: flex; align-items: center; justify-content: center; padding: 40px; }
 .spinner::after {
-  content: '';
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--divider);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
+  content: ''; width: 28px; height: 28px;
+  border: 3px solid var(--divider); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Swipe delete hint en mobile ───────────────────────────── */
-@media (max-width: 480px) {
-  .tarea-card { margin: 8px; }
-}
+@media (max-width: 480px) { .tarea-card { margin: 8px; } }
 </style>
 </head>
 <body>
 
 <div id="app">
 
-  <!-- ══ PANTALLA A: COLABORADORES ══════════════════════════ -->
+  <!-- PANTALLA A: COLABORADORES -->
   <div class="screen" id="screen-colab">
     <div class="header">
       <h1>🗂 TaskBot</h1>
-      <div class="header-actions">
-        <button class="icon-btn" title="Nuevo colaborador" onclick="abrirModalColab()">➕</button>
-      </div>
+      <button class="icon-btn" title="Nuevo colaborador" onclick="abrirModalColab()">➕</button>
     </div>
-    <div class="list" id="list-colab">
-      <div class="spinner"></div>
-    </div>
+    <div class="list" id="list-colab"><div class="spinner"></div></div>
   </div>
 
-  <!-- ══ PANTALLA B: TAREAS ══════════════════════════════════ -->
+  <!-- PANTALLA B: TAREAS -->
   <div class="screen" id="screen-tareas">
     <div class="header">
       <button class="back-btn" onclick="volverColab()">‹</button>
       <div id="avatar-header" class="avatar" style="width:36px;height:36px;font-size:13px;"></div>
       <h1 id="header-nombre" style="margin-left:4px;">Tareas</h1>
-      <div class="header-actions">
-        <button class="icon-btn" title="Borrar colaborador" onclick="confirmarBorrarColab()" style="color:var(--danger);font-size:16px;">🗑</button>
-      </div>
+      <button class="icon-btn" title="Borrar colaborador" onclick="confirmarBorrarColab()" style="color:var(--danger)">🗑</button>
     </div>
-    <div class="list" id="list-tareas">
-      <div class="spinner"></div>
-    </div>
+    <div class="list" id="list-tareas"><div class="spinner"></div></div>
   </div>
 
 </div>
 
-<!-- FAB nueva tarea -->
-<button class="fab hidden" id="fab-tarea" onclick="abrirModalTarea()" title="Nueva tarea">✎</button>
+<button class="fab hidden" id="fab-tarea" onclick="abrirModalTarea()">✎</button>
 
-<!-- ══ MODAL NUEVA TAREA ════════════════════════════════════ -->
+<!-- MODAL NUEVA TAREA -->
 <div class="modal-overlay" id="modal-tarea" onclick="cerrarModalTarea(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>✎ Nueva tarea</h2>
@@ -479,13 +305,13 @@ html, body {
       <textarea id="in-detalle" placeholder="Descripción, contexto, links..."></textarea>
     </div>
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="cerrarModalTarea(null)">Cancelar</button>
+      <button class="btn-cancel"  onclick="cerrarModalTarea(null)">Cancelar</button>
       <button class="btn-primary" onclick="guardarTarea()">Guardar tarea</button>
     </div>
   </div>
 </div>
 
-<!-- ══ MODAL NUEVO COLABORADOR ═════════════════════════════ -->
+<!-- MODAL NUEVO COLABORADOR -->
 <div class="modal-overlay" id="modal-colab" onclick="cerrarModalColab(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h2>👤 Nuevo colaborador</h2>
@@ -508,13 +334,13 @@ html, body {
       <input type="email" id="in-email" placeholder="juan@empresa.com"/>
     </div>
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="cerrarModalColab(null)">Cancelar</button>
+      <button class="btn-cancel"  onclick="cerrarModalColab(null)">Cancelar</button>
       <button class="btn-primary" onclick="guardarColab()">Guardar</button>
     </div>
   </div>
 </div>
 
-<!-- ══ CONFIRM ══════════════════════════════════════════════ -->
+<!-- CONFIRM -->
 <div id="confirm-overlay">
   <div class="confirm-box">
     <h3 id="confirm-title">¿Confirmar?</h3>
@@ -526,12 +352,11 @@ html, body {
   </div>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
 <script>
 // ══════════════════════════════════════════════════════════════
-//  CONFIG — ajustar antes de publicar
+//  CONFIG
 // ══════════════════════════════════════════════════════════════
 var API_URL = 'https://script.google.com/macros/s/AKfycbxw-68nGGiJVxzHMCCAzFX0YsUzSN58T_mtdvLsB1VSSYA-4oWPHCZ1hoV16Fxap5p_fg/exec';
 var TOKEN   = 'taskbot2026victor';
@@ -539,27 +364,24 @@ var TOKEN   = 'taskbot2026victor';
 // ══════════════════════════════════════════════════════════════
 //  ESTADO
 // ══════════════════════════════════════════════════════════════
-var colabActual = null;   // { id, nombre, apellido, telefono, email }
+var colabActual = null;
 var confirmCb   = null;
 
-// ═════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 //  API HELPERS
 // ══════════════════════════════════════════════════════════════
-async function enviarMail(subject, detalle) {
-  if (!colabActual || !colabActual.email) { toast('Sin email registrado', '⚠️'); return; }
-  try {
-    var r = await apiPost({ action:'enviarMail', email: colabActual.email, subject, detalle });
-    if (r.status === 'ok') toast('Mail enviado', '✉️');
-    else toast('Error: ' + r.msg, '❌');
-  } catch(e) { toast('Sin conexión', '❌'); }
+async function apiGet(params) {
+  var q = new URLSearchParams(Object.assign({ token: TOKEN }, params));
+  var r = await fetch(API_URL + '?' + q);
+  return r.json();
 }
 
 async function apiPost(body) {
-  var r = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(Object.assign({ token: TOKEN }, body))
+  var params = new URLSearchParams({
+    token: TOKEN,
+    data:  JSON.stringify(body)
   });
+  var r = await fetch(API_URL + '?' + params);
   return r.json();
 }
 
@@ -622,8 +444,8 @@ function abrirTareas(colab) {
   colabActual = colab;
   document.getElementById('header-nombre').textContent = colab.apellido + ', ' + colab.nombre;
   var av = document.getElementById('avatar-header');
-  av.textContent  = iniciales(colab.nombre, colab.apellido);
-  av.style.background = avatarColor(colab.nombre + colab.apellido);
+  av.textContent       = iniciales(colab.nombre, colab.apellido);
+  av.style.background  = avatarColor(colab.nombre + colab.apellido);
   document.getElementById('screen-tareas').classList.add('active');
   document.getElementById('fab-tarea').classList.remove('hidden');
   cargarTareas(colab.id);
@@ -632,7 +454,7 @@ function abrirTareas(colab) {
 function volverColab() {
   document.getElementById('screen-tareas').classList.remove('active');
   document.getElementById('fab-tarea').classList.add('hidden');
-  cargarColabs();   // refresca contadores
+  cargarColabs();
 }
 
 async function cargarTareas(colId) {
@@ -650,7 +472,7 @@ async function cargarTareas(colId) {
         <div class="tarea-subject">${escHtml(t.subject)}</div>
         <div class="tarea-detalle">${escHtml(t.detalle)}</div>
         <div class="tarea-btns">
-          <button class="btn btn-ws"   onclick="enviarWS('${t.id}','${escAttr(t.subject)}','${escAttr(t.detalle)}')">💬 WS</button>
+          <button class="btn btn-ws"   onclick="enviarWS('${escAttr(t.subject)}','${escAttr(t.detalle)}')">💬 WS</button>
           <button class="btn btn-mail" onclick="enviarMail('${escAttr(t.subject)}','${escAttr(t.detalle)}')">✉ Mail</button>
           <button class="btn btn-del"  onclick="confirmarBorrarTarea('${t.id}','${escAttr(t.subject)}')">🗑</button>
         </div>
@@ -699,7 +521,7 @@ async function borrarTarea(id) {
 // ══════════════════════════════════════════════════════════════
 //  ENVÍOS
 // ══════════════════════════════════════════════════════════════
-async function enviarWS(tareaId, subject, detalle) {
+async function enviarWS(subject, detalle) {
   if (!colabActual || !colabActual.telefono) { toast('Sin número de teléfono', '⚠️'); return; }
   var mensaje = '📋 *' + subject + '*\n\n' + detalle;
   try {
@@ -709,10 +531,13 @@ async function enviarWS(tareaId, subject, detalle) {
   } catch(e) { toast('Sin conexión','❌'); }
 }
 
-function enviarMail(subject, detalle) {
+async function enviarMail(subject, detalle) {
   if (!colabActual || !colabActual.email) { toast('Sin email registrado', '⚠️'); return; }
-  var link = 'mailto:'+colabActual.email+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(detalle);
-  window.open(link);
+  try {
+    var r = await apiPost({ action:'enviarMail', email: colabActual.email, subject, detalle });
+    if (r.status === 'ok') toast('Mail enviado ✉️', '');
+    else toast('Error: ' + r.msg, '❌');
+  } catch(e) { toast('Sin conexión', '❌'); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -770,12 +595,14 @@ function toast(msg, icon) {
 function iniciales(nombre, apellido) {
   return ((nombre||'?')[0] + (apellido||'?')[0]).toUpperCase();
 }
+
 var COLORS = ['#00897b','#0097a7','#5e35b1','#3949ab','#1e88e5','#d81b60','#e53935','#6d4c41','#546e7a','#43a047'];
 function avatarColor(str) {
   var h = 0;
-  for (var i=0; i<str.length; i++) h = str.charCodeAt(i) + ((h<<5)-h);
+  for (var i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h<<5)-h);
   return COLORS[Math.abs(h) % COLORS.length];
 }
+
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -783,7 +610,6 @@ function escAttr(s) {
   return String(s||'').replace(/'/g,'&#39;').replace(/\n/g,' ');
 }
 
-// ── Enter en modales ────────────────────────────────────────
 document.getElementById('in-subject').addEventListener('keydown', e => {
   if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('in-detalle').focus(); }
 });
