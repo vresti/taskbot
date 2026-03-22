@@ -146,6 +146,7 @@ html, body {
 .btn:hover   { opacity: .85; }
 .btn-ws      { background: #00a884; color: #fff; }
 .btn-mail    { background: #1976d2; color: #fff; }
+.btn-edit    { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
 .btn-del     { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
 
 .fab {
@@ -272,7 +273,7 @@ html, body {
   <div class="screen" id="screen-colab">
     <div class="header">
       <h1>🗂 TaskBot</h1>
-      <button class="icon-btn" title="Nuevo colaborador" onclick="abrirModalColab()">➕</button>
+      <button class="icon-btn" title="Nuevo colaborador" onclick="abrirModalColab(null)">➕</button>
     </div>
     <div class="list" id="list-colab"><div class="spinner"></div></div>
   </div>
@@ -283,38 +284,23 @@ html, body {
       <button class="back-btn" onclick="volverColab()">‹</button>
       <div id="avatar-header" class="avatar" style="width:36px;height:36px;font-size:13px;"></div>
       <h1 id="header-nombre" style="margin-left:4px;">Tareas</h1>
-      <button class="icon-btn" title="Borrar colaborador" onclick="confirmarBorrarColab()" style="color:var(--danger)">🗑</button>
+      <!-- Editar colaborador -->
+      <button class="icon-btn" title="Editar colaborador" onclick="abrirModalColab(colabActual)" style="color:var(--accent)">✎</button>
+      <!-- Borrar colaborador — solo visible si tareas=0 -->
+      <button class="icon-btn" id="btn-borrar-colab" title="Borrar colaborador" onclick="confirmarBorrarColab()" style="color:var(--danger)">🗑</button>
     </div>
     <div class="list" id="list-tareas"><div class="spinner"></div></div>
   </div>
 
 </div>
 
-<button class="fab hidden" id="fab-tarea" onclick="abrirModalTarea()">✎</button>
+<button class="fab hidden" id="fab-tarea" onclick="abrirModalTarea(null)">✎</button>
 
-<!-- MODAL NUEVA TAREA -->
-<div class="modal-overlay" id="modal-tarea" onclick="cerrarModalTarea(event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h2>✎ Nueva tarea</h2>
-    <div class="field">
-      <label>Subject</label>
-      <input type="text" id="in-subject" placeholder="¿Qué necesitás?" maxlength="120"/>
-    </div>
-    <div class="field">
-      <label>Detalle</label>
-      <textarea id="in-detalle" placeholder="Descripción, contexto, links..."></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-cancel"  onclick="cerrarModalTarea(null)">Cancelar</button>
-      <button class="btn-primary" onclick="guardarTarea()">Guardar tarea</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL NUEVO COLABORADOR -->
+<!-- MODAL COLABORADOR (nuevo y editar) -->
 <div class="modal-overlay" id="modal-colab" onclick="cerrarModalColab(event)">
   <div class="modal" onclick="event.stopPropagation()">
-    <h2>👤 Nuevo colaborador</h2>
+    <h2 id="modal-colab-titulo">👤 Nuevo colaborador</h2>
+    <input type="hidden" id="in-colab-id"/>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
       <div class="field">
         <label>Nombre</label>
@@ -340,6 +326,26 @@ html, body {
   </div>
 </div>
 
+<!-- MODAL TAREA (nueva y editar) -->
+<div class="modal-overlay" id="modal-tarea" onclick="cerrarModalTarea(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2 id="modal-tarea-titulo">✎ Nueva tarea</h2>
+    <input type="hidden" id="in-tarea-id"/>
+    <div class="field">
+      <label>Subject</label>
+      <input type="text" id="in-subject" placeholder="¿Qué necesitás?" maxlength="120"/>
+    </div>
+    <div class="field">
+      <label>Detalle</label>
+      <textarea id="in-detalle" placeholder="Descripción, contexto, links..."></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel"  onclick="cerrarModalTarea(null)">Cancelar</button>
+      <button class="btn-primary" onclick="guardarTarea()">Guardar tarea</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM -->
 <div id="confirm-overlay">
   <div class="confirm-box">
@@ -355,21 +361,13 @@ html, body {
 <div id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════════════════════════
-//  CONFIG
-// ══════════════════════════════════════════════════════════════
 var API_URL = 'https://script.google.com/macros/s/AKfycbxw-68nGGiJVxzHMCCAzFX0YsUzSN58T_mtdvLsB1VSSYA-4oWPHCZ1hoV16Fxap5p_fg/exec';
 var TOKEN   = 'taskbot2026victor';
 
-// ══════════════════════════════════════════════════════════════
-//  ESTADO
-// ══════════════════════════════════════════════════════════════
 var colabActual = null;
 var confirmCb   = null;
 
-// ══════════════════════════════════════════════════════════════
-//  API HELPERS
-// ══════════════════════════════════════════════════════════════
+// ── API ───────────────────────────────────────────────────────
 async function apiGet(params) {
   var q = new URLSearchParams(Object.assign({ token: TOKEN }, params));
   var r = await fetch(API_URL + '?' + q);
@@ -377,17 +375,12 @@ async function apiGet(params) {
 }
 
 async function apiPost(body) {
-  var params = new URLSearchParams({
-    token: TOKEN,
-    data:  JSON.stringify(body)
-  });
+  var params = new URLSearchParams({ token: TOKEN, data: JSON.stringify(body) });
   var r = await fetch(API_URL + '?' + params);
   return r.json();
 }
 
-// ══════════════════════════════════════════════════════════════
-//  COLABORADORES
-// ══════════════════════════════════════════════════════════════
+// ── COLABORADORES ─────────────────────────────────────────────
 async function cargarColabs() {
   var el = document.getElementById('list-colab');
   el.innerHTML = '<div class="spinner"></div>';
@@ -413,17 +406,25 @@ async function cargarColabs() {
   }
 }
 
-function abrirModalColab() {
-  ['in-nombre','in-apellido','in-telefono','in-email'].forEach(id => document.getElementById(id).value = '');
+function abrirModalColab(colab) {
+  // colab = null → nuevo, colab = objeto → editar
+  document.getElementById('in-colab-id').value  = colab ? colab.id : '';
+  document.getElementById('in-nombre').value    = colab ? colab.nombre   : '';
+  document.getElementById('in-apellido').value  = colab ? colab.apellido : '';
+  document.getElementById('in-telefono').value  = colab ? colab.telefono : '';
+  document.getElementById('in-email').value     = colab ? colab.email    : '';
+  document.getElementById('modal-colab-titulo').textContent = colab ? '✎ Editar colaborador' : '👤 Nuevo colaborador';
   document.getElementById('modal-colab').classList.add('open');
   setTimeout(() => document.getElementById('in-nombre').focus(), 300);
 }
+
 function cerrarModalColab(e) {
   if (e && e.target !== document.getElementById('modal-colab')) return;
   document.getElementById('modal-colab').classList.remove('open');
 }
 
 async function guardarColab() {
+  var id       = document.getElementById('in-colab-id').value;
   var nombre   = document.getElementById('in-nombre').value.trim();
   var apellido = document.getElementById('in-apellido').value.trim();
   var telefono = document.getElementById('in-telefono').value.trim();
@@ -431,21 +432,33 @@ async function guardarColab() {
   if (!nombre || !apellido) { toast('Nombre y apellido son obligatorios', '⚠️'); return; }
   document.getElementById('modal-colab').classList.remove('open');
   try {
-    var r = await apiPost({ action:'nuevoColaborador', nombre, apellido, telefono, email });
-    if (r.status === 'ok') { toast('Colaborador guardado', '✅'); cargarColabs(); }
-    else toast('Error: ' + r.msg, '❌');
+    var action = id ? 'editarColaborador' : 'nuevoColaborador';
+    var r = await apiPost({ action, id, nombre, apellido, telefono, email });
+    if (r.status === 'ok') {
+      toast(id ? 'Colaborador actualizado' : 'Colaborador guardado', '✅');
+      if (id) {
+        // actualizar colabActual y header
+        colabActual = Object.assign(colabActual, { nombre, apellido, telefono, email });
+        document.getElementById('header-nombre').textContent = apellido + ', ' + nombre;
+        var av = document.getElementById('avatar-header');
+        av.textContent     = iniciales(nombre, apellido);
+        av.style.background = avatarColor(nombre + apellido);
+      } else {
+        cargarColabs();
+      }
+    } else toast('Error: ' + r.msg, '❌');
   } catch(e) { toast('Sin conexión', '❌'); }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  TAREAS
-// ══════════════════════════════════════════════════════════════
+// ── TAREAS ────────────────────────────────────────────────────
 function abrirTareas(colab) {
   colabActual = colab;
   document.getElementById('header-nombre').textContent = colab.apellido + ', ' + colab.nombre;
   var av = document.getElementById('avatar-header');
   av.textContent       = iniciales(colab.nombre, colab.apellido);
   av.style.background  = avatarColor(colab.nombre + colab.apellido);
+  // Mostrar/ocultar botón borrar según tareas
+  document.getElementById('btn-borrar-colab').style.display = colab.tareas === 0 ? '' : 'none';
   document.getElementById('screen-tareas').classList.add('active');
   document.getElementById('fab-tarea').classList.remove('hidden');
   cargarTareas(colab.id);
@@ -463,6 +476,8 @@ async function cargarTareas(colId) {
   try {
     var d = await apiGet({ action: 'getTareas', id: colId });
     if (d.status !== 'ok') { el.innerHTML = '<p style="padding:20px;color:var(--danger)">Error: '+d.msg+'</p>'; return; }
+    // Actualizar visibilidad del botón borrar según tareas actuales
+    document.getElementById('btn-borrar-colab').style.display = d.data.length === 0 ? '' : 'none';
     if (!d.data.length) {
       el.innerHTML = '<div class="empty"><div class="icon">✅</div><div>Sin tareas pendientes</div></div>';
       return;
@@ -474,6 +489,7 @@ async function cargarTareas(colId) {
         <div class="tarea-btns">
           <button class="btn btn-ws"   onclick="enviarWS('${escAttr(t.subject)}','${escAttr(t.detalle)}')">💬 WS</button>
           <button class="btn btn-mail" onclick="enviarMail('${escAttr(t.subject)}','${escAttr(t.detalle)}')">✉ Mail</button>
+          <button class="btn btn-edit" onclick="abrirModalTarea(${JSON.stringify(t).replace(/"/g,'&quot;')})">✎</button>
           <button class="btn btn-del"  onclick="confirmarBorrarTarea('${t.id}','${escAttr(t.subject)}')">🗑</button>
         </div>
       </div>
@@ -483,27 +499,35 @@ async function cargarTareas(colId) {
   }
 }
 
-function abrirModalTarea() {
-  document.getElementById('in-subject').value = '';
-  document.getElementById('in-detalle').value = '';
+function abrirModalTarea(tarea) {
+  // tarea = null → nueva, tarea = objeto → editar
+  document.getElementById('in-tarea-id').value  = tarea ? tarea.id : '';
+  document.getElementById('in-subject').value   = tarea ? tarea.subject : '';
+  document.getElementById('in-detalle').value   = tarea ? tarea.detalle : '';
+  document.getElementById('modal-tarea-titulo').textContent = tarea ? '✎ Editar tarea' : '✎ Nueva tarea';
   document.getElementById('modal-tarea').classList.add('open');
   setTimeout(() => document.getElementById('in-subject').focus(), 300);
 }
+
 function cerrarModalTarea(e) {
   if (e && e.target !== document.getElementById('modal-tarea')) return;
   document.getElementById('modal-tarea').classList.remove('open');
 }
 
 async function guardarTarea() {
+  var id      = document.getElementById('in-tarea-id').value;
   var subject = document.getElementById('in-subject').value.trim();
   var detalle = document.getElementById('in-detalle').value.trim();
   if (!subject) { toast('El subject es obligatorio', '⚠️'); return; }
   if (!colabActual) return;
   document.getElementById('modal-tarea').classList.remove('open');
   try {
-    var r = await apiPost({ action:'nuevaTarea', colId: colabActual.id, subject, detalle });
-    if (r.status === 'ok') { toast('Tarea guardada', '✅'); cargarTareas(colabActual.id); }
-    else toast('Error: ' + r.msg, '❌');
+    var action = id ? 'editarTarea' : 'nuevaTarea';
+    var r = await apiPost({ action, id, colId: colabActual.id, subject, detalle });
+    if (r.status === 'ok') {
+      toast(id ? 'Tarea actualizada' : 'Tarea guardada', '✅');
+      cargarTareas(colabActual.id);
+    } else toast('Error: ' + r.msg, '❌');
   } catch(e) { toast('Sin conexión', '❌'); }
 }
 
@@ -512,15 +536,13 @@ async function borrarTarea(id) {
     var r = await apiPost({ action:'borrarTarea', id });
     if (r.status === 'ok') {
       var el = document.getElementById('tc-'+id);
-      if (el) { el.style.opacity='0'; el.style.transform='translateX(-30px)'; el.style.transition='all .25s'; setTimeout(()=>el.remove(),250); }
+      if (el) { el.style.opacity='0'; el.style.transform='translateX(-30px)'; el.style.transition='all .25s'; setTimeout(()=>{ el.remove(); cargarTareas(colabActual.id); },250); }
       toast('Tarea borrada', '🗑');
     } else toast('Error: '+r.msg,'❌');
   } catch(e) { toast('Sin conexión','❌'); }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  ENVÍOS
-// ══════════════════════════════════════════════════════════════
+// ── ENVÍOS ────────────────────────────────────────────────────
 async function enviarWS(subject, detalle) {
   if (!colabActual || !colabActual.telefono) { toast('Sin número de teléfono', '⚠️'); return; }
   var mensaje = '📋 *' + subject + '*\n\n' + detalle;
@@ -535,19 +557,17 @@ async function enviarMail(subject, detalle) {
   if (!colabActual || !colabActual.email) { toast('Sin email registrado', '⚠️'); return; }
   try {
     var r = await apiPost({ action:'enviarMail', email: colabActual.email, subject, detalle });
-    if (r.status === 'ok') toast('Mail enviado ✉️', '');
+    if (r.status === 'ok') toast('Mail enviado', '✉️');
     else toast('Error: ' + r.msg, '❌');
   } catch(e) { toast('Sin conexión', '❌'); }
 }
 
-// ══════════════════════════════════════════════════════════════
-//  BORRAR COLABORADOR
-// ══════════════════════════════════════════════════════════════
+// ── BORRAR COLABORADOR ────────────────────────────────────────
 function confirmarBorrarColab() {
   if (!colabActual) return;
   showConfirm(
     '¿Borrar colaborador?',
-    colabActual.nombre + ' ' + colabActual.apellido + ' y todas sus tareas serán eliminados.',
+    colabActual.nombre + ' ' + colabActual.apellido + ' será eliminado.',
     async () => {
       try {
         var r = await apiPost({ action:'borrarColaborador', id: colabActual.id });
@@ -562,9 +582,7 @@ function confirmarBorrarTarea(id, subject) {
   showConfirm('¿Borrar tarea?', '"'+subject+'"', () => borrarTarea(id));
 }
 
-// ══════════════════════════════════════════════════════════════
-//  CONFIRM
-// ══════════════════════════════════════════════════════════════
+// ── CONFIRM ───────────────────────────────────────────────────
 function showConfirm(titulo, msg, cb) {
   document.getElementById('confirm-title').textContent = titulo;
   document.getElementById('confirm-msg').textContent   = msg;
@@ -577,9 +595,7 @@ function cerrarConfirm(ok) {
   confirmCb = null;
 }
 
-// ══════════════════════════════════════════════════════════════
-//  TOAST
-// ══════════════════════════════════════════════════════════════
+// ── TOAST ─────────────────────────────────────────────────────
 var toastTimer = null;
 function toast(msg, icon) {
   var el = document.getElementById('toast');
@@ -589,20 +605,16 @@ function toast(msg, icon) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-// ══════════════════════════════════════════════════════════════
-//  HELPERS
-// ══════════════════════════════════════════════════════════════
+// ── HELPERS ───────────────────────────────────────────────────
 function iniciales(nombre, apellido) {
   return ((nombre||'?')[0] + (apellido||'?')[0]).toUpperCase();
 }
-
 var COLORS = ['#00897b','#0097a7','#5e35b1','#3949ab','#1e88e5','#d81b60','#e53935','#6d4c41','#546e7a','#43a047'];
 function avatarColor(str) {
   var h = 0;
   for (var i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h<<5)-h);
   return COLORS[Math.abs(h) % COLORS.length];
 }
-
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -617,9 +629,6 @@ document.getElementById('in-apellido').addEventListener('keydown', e => {
   if (e.key==='Enter') document.getElementById('in-telefono').focus();
 });
 
-// ════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════
 cargarColabs();
 </script>
 </body>
