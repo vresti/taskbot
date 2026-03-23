@@ -17,6 +17,7 @@
   --sub:       #8696a0;
   --accent:    #00a884;
   --danger:    #ef5350;
+  --warn:      #f59e0b;
   --divider:   #2a3942;
   --input:     #2a3942;
   --modal-bg:  rgba(0,0,0,.7);
@@ -24,256 +25,131 @@
   --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-html, body {
-  height: 100%;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
-  font-size: 15px;
-  overflow: hidden;
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:var(--font); font-size:15px; overflow:hidden; }
+
+#app { display:flex; height:100vh; width:100vw; overflow:hidden; position:relative; }
+
+.screen { position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; background:var(--panel); transition:transform .28s cubic-bezier(.4,0,.2,1); }
+#screen-colab  { transform:translateX(0); z-index:1; }
+#screen-tareas { transform:translateX(100%); z-index:2; }
+#screen-tareas.active { transform:translateX(0); }
+
+.header { display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--header); min-height:60px; flex-shrink:0; }
+.header h1 { font-size:18px; font-weight:600; flex:1; }
+.back-btn { background:none; border:none; color:var(--accent); font-size:22px; cursor:pointer; padding:4px 8px 4px 0; line-height:1; }
+.icon-btn { background:none; border:none; color:var(--sub); font-size:20px; cursor:pointer; padding:6px; border-radius:50%; transition:background .2s,color .2s; line-height:1; }
+.icon-btn:hover { background:var(--hover); color:var(--text); }
+
+.list { flex:1; overflow-y:auto; overscroll-behavior:contain; }
+.list::-webkit-scrollbar { width:4px; }
+.list::-webkit-scrollbar-thumb { background:var(--hover); border-radius:4px; }
+
+.colab-row { display:flex; align-items:center; gap:14px; padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--divider); transition:background .15s; user-select:none; }
+.colab-row:hover  { background:var(--hover); }
+.colab-row:active { background:var(--divider); }
+
+.avatar { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700; color:#fff; flex-shrink:0; }
+.colab-info { flex:1; min-width:0; }
+.colab-name { font-size:15px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.colab-sub  { font-size:13px; color:var(--sub); margin-top:2px; }
+
+.badge { background:var(--accent); color:#fff; font-size:11px; font-weight:700; padding:2px 7px; border-radius:10px; min-width:20px; text-align:center; }
+.badge.zero { background:var(--hover); color:var(--sub); }
+
+.tarea-card { background:var(--card); margin:10px 12px; border-radius:var(--radius); padding:12px 14px; border-left:3px solid var(--accent); }
+.tarea-card.has-sched { border-left-color:var(--warn); }
+.tarea-subject { font-size:14px; font-weight:600; margin-bottom:5px; line-height:1.3; }
+.tarea-detalle { font-size:13px; color:var(--sub); line-height:1.5; margin-bottom:6px; white-space:pre-wrap; word-break:break-word; }
+.sched-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--warn); margin-bottom:8px; }
+.tarea-btns { display:flex; gap:6px; justify-content:flex-end; align-items:center; flex-wrap:wrap; }
+
+.btn { display:inline-flex; align-items:center; gap:4px; border:none; border-radius:20px; padding:5px 11px; font-size:11px; font-weight:600; cursor:pointer; transition:opacity .2s,transform .1s; }
+.btn:active { transform:scale(.96); }
+.btn:hover  { opacity:.85; }
+.btn-ws   { background:#00a884; color:#fff; }
+.btn-mail { background:#1976d2; color:#fff; }
+.btn-edit { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+.btn-sched{ background:transparent; color:var(--warn);   border:1px solid var(--warn); }
+.btn-sched.active { background:var(--warn); color:#000; }
+.btn-del  { background:transparent; color:var(--danger); border:1px solid var(--danger); }
+
+.fab { position:fixed; bottom:24px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--accent); color:#fff; font-size:26px; border:none; cursor:pointer; box-shadow:0 4px 16px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:10; transition:transform .2s,opacity .2s; }
+.fab:hover  { transform:scale(1.08); }
+.fab:active { transform:scale(.95); }
+.fab.hidden { opacity:0; pointer-events:none; }
+
+.modal-overlay { position:fixed; inset:0; background:var(--modal-bg); z-index:100; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s; }
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal { background:var(--header); width:100%; max-width:520px; border-radius:20px 20px 0 0; padding:20px 20px 30px; transform:translateY(100%); transition:transform .28s cubic-bezier(.4,0,.2,1); max-height:90vh; overflow-y:auto; }
+.modal-overlay.open .modal { transform:translateY(0); }
+.modal h2 { font-size:16px; font-weight:600; margin-bottom:18px; color:var(--accent); }
+
+.field { margin-bottom:12px; }
+.field label { display:block; font-size:11px; color:var(--sub); margin-bottom:4px; font-weight:500; text-transform:uppercase; letter-spacing:.5px; }
+.field input, .field textarea, .field select {
+  width:100%; background:var(--input); border:1px solid var(--divider); border-radius:8px;
+  padding:9px 12px; color:var(--text); font-size:14px; font-family:var(--font); outline:none; transition:border-color .2s;
+  -webkit-appearance:none;
 }
+.field input:focus, .field textarea:focus, .field select:focus { border-color:var(--accent); }
+.field textarea { resize:vertical; min-height:70px; line-height:1.5; }
+.field select option { background:var(--header); }
 
-#app {
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-  position: relative;
-}
+/* Schedule modal específico */
+.sched-modos { display:flex; gap:8px; margin-bottom:16px; }
+.modo-btn { flex:1; padding:8px 4px; border:1px solid var(--divider); border-radius:8px; background:var(--input); color:var(--sub); font-size:12px; font-weight:600; cursor:pointer; text-align:center; transition:all .2s; }
+.modo-btn.sel { border-color:var(--warn); background:rgba(245,158,11,.15); color:var(--warn); }
 
-.screen {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  transition: transform .28s cubic-bezier(.4,0,.2,1);
-}
+.sched-sec { display:none; }
+.sched-sec.visible { display:block; }
 
-#screen-colab  { transform: translateX(0); z-index: 1; }
-#screen-tareas { transform: translateX(100%); z-index: 2; }
-#screen-tareas.active { transform: translateX(0); }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+.row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0 10px; }
 
-.header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
-  background: var(--header);
-  min-height: 60px;
-  flex-shrink: 0;
-}
-.header h1 { font-size: 18px; font-weight: 600; flex: 1; }
+.toggle-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid var(--divider); margin-top:8px; }
+.toggle-row label { font-size:13px; color:var(--text); }
+.toggle { position:relative; width:44px; height:24px; }
+.toggle input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; inset:0; background:var(--hover); border-radius:12px; transition:.3s; cursor:pointer; }
+.toggle-slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+.toggle input:checked + .toggle-slider { background:var(--warn); }
+.toggle input:checked + .toggle-slider::before { transform:translateX(20px); }
 
-.back-btn {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 22px;
-  cursor: pointer;
-  padding: 4px 8px 4px 0;
-  line-height: 1;
-}
+.modal-btns { display:flex; gap:10px; margin-top:16px; }
+.btn-primary { flex:1; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer; transition:opacity .2s; }
+.btn-primary:hover { opacity:.85; }
+.btn-warn { flex:1; background:var(--warn); color:#000; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:600; cursor:pointer; }
+.btn-cancel { background:var(--hover); color:var(--sub); border:none; border-radius:8px; padding:12px 18px; font-size:14px; cursor:pointer; }
+.btn-danger-full { width:100%; background:transparent; color:var(--danger); border:1px solid var(--danger); border-radius:8px; padding:10px; font-size:13px; cursor:pointer; margin-top:8px; }
 
-.icon-btn {
-  background: none;
-  border: none;
-  color: var(--sub);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
-  transition: background .2s, color .2s;
-  line-height: 1;
-}
-.icon-btn:hover { background: var(--hover); color: var(--text); }
+#toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px); background:#2a3942; color:var(--text); padding:10px 20px; border-radius:20px; font-size:13px; font-weight:500; opacity:0; transition:opacity .3s,transform .3s; z-index:200; white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,.4); pointer-events:none; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-.list { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
-.list::-webkit-scrollbar { width: 4px; }
-.list::-webkit-scrollbar-thumb { background: var(--hover); border-radius: 4px; }
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; height:60%; color:var(--sub); font-size:14px; }
+.empty .icon { font-size:48px; opacity:.4; }
 
-.colab-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--divider);
-  transition: background .15s;
-  user-select: none;
-}
-.colab-row:hover  { background: var(--hover); }
-.colab-row:active { background: var(--divider); }
+#confirm-overlay { position:fixed; inset:0; background:var(--modal-bg); z-index:300; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .2s; }
+#confirm-overlay.open { opacity:1; pointer-events:all; }
+.confirm-box { background:var(--header); border-radius:14px; padding:24px 22px; width:280px; text-align:center; }
+.confirm-box h3 { font-size:15px; margin-bottom:8px; }
+.confirm-box p  { font-size:13px; color:var(--sub); margin-bottom:20px; line-height:1.5; }
+.confirm-btns { display:flex; gap:10px; }
+.btn-danger { flex:1; background:var(--danger); color:#fff; border:none; border-radius:8px; padding:11px; font-size:14px; font-weight:600; cursor:pointer; }
+.btn-safe   { flex:1; background:var(--hover); color:var(--text); border:none; border-radius:8px; padding:11px; font-size:14px; cursor:pointer; }
 
-.avatar {
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; font-weight: 700;
-  color: #fff; flex-shrink: 0;
-}
-
-.colab-info { flex: 1; min-width: 0; }
-.colab-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.colab-sub  { font-size: 13px; color: var(--sub); margin-top: 2px; }
-
-.badge {
-  background: var(--accent);
-  color: #fff; font-size: 11px; font-weight: 700;
-  padding: 2px 7px; border-radius: 10px; min-width: 20px; text-align: center;
-}
-.badge.zero { background: var(--hover); color: var(--sub); }
-
-.tarea-card {
-  background: var(--card);
-  margin: 10px 12px;
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  border-left: 3px solid var(--accent);
-}
-.tarea-subject { font-size: 14px; font-weight: 600; margin-bottom: 5px; line-height: 1.3; }
-.tarea-detalle { font-size: 13px; color: var(--sub); line-height: 1.5; margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; }
-.tarea-btns    { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
-
-.btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  border: none; border-radius: 20px;
-  padding: 6px 14px; font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: opacity .2s, transform .1s;
-}
-.btn:active  { transform: scale(.96); }
-.btn:hover   { opacity: .85; }
-.btn-ws      { background: #00a884; color: #fff; }
-.btn-mail    { background: #1976d2; color: #fff; }
-.btn-edit    { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
-.btn-del     { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-
-.fab {
-  position: fixed; bottom: 24px; right: 20px;
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  font-size: 26px; border: none; cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,.4);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 10; transition: transform .2s, opacity .2s;
-}
-.fab:hover  { transform: scale(1.08); }
-.fab:active { transform: scale(.95); }
-.fab.hidden { opacity: 0; pointer-events: none; }
-
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: var(--modal-bg);
-  z-index: 100;
-  display: flex; align-items: flex-end; justify-content: center;
-  opacity: 0; pointer-events: none;
-  transition: opacity .25s;
-}
-.modal-overlay.open { opacity: 1; pointer-events: all; }
-
-.modal {
-  background: var(--header);
-  width: 100%; max-width: 520px;
-  border-radius: 20px 20px 0 0;
-  padding: 20px 20px 30px;
-  transform: translateY(100%);
-  transition: transform .28s cubic-bezier(.4,0,.2,1);
-}
-.modal-overlay.open .modal { transform: translateY(0); }
-.modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 18px; color: var(--accent); }
-
-.field { margin-bottom: 14px; }
-.field label {
-  display: block; font-size: 12px; color: var(--sub);
-  margin-bottom: 5px; font-weight: 500;
-  text-transform: uppercase; letter-spacing: .5px;
-}
-.field input,
-.field textarea {
-  width: 100%; background: var(--input);
-  border: 1px solid var(--divider); border-radius: 8px;
-  padding: 10px 12px; color: var(--text);
-  font-size: 14px; font-family: var(--font);
-  outline: none; transition: border-color .2s;
-}
-.field input:focus,
-.field textarea:focus { border-color: var(--accent); }
-.field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
-
-.modal-btns { display: flex; gap: 10px; margin-top: 18px; }
-.btn-primary {
-  flex: 1; background: var(--accent); color: #fff;
-  border: none; border-radius: 8px; padding: 12px;
-  font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s;
-}
-.btn-primary:hover { opacity: .85; }
-.btn-cancel {
-  background: var(--hover); color: var(--sub);
-  border: none; border-radius: 8px;
-  padding: 12px 18px; font-size: 14px; cursor: pointer;
-}
-
-#toast {
-  position: fixed; bottom: 90px; left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: #2a3942; color: var(--text);
-  padding: 10px 20px; border-radius: 20px;
-  font-size: 13px; font-weight: 500;
-  opacity: 0; transition: opacity .3s, transform .3s;
-  z-index: 200; white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0,0,0,.4);
-  pointer-events: none;
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-.empty {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 12px; height: 60%;
-  color: var(--sub); font-size: 14px;
-}
-.empty .icon { font-size: 48px; opacity: .4; }
-
-#confirm-overlay {
-  position: fixed; inset: 0;
-  background: var(--modal-bg);
-  z-index: 300;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity .2s;
-}
-#confirm-overlay.open { opacity: 1; pointer-events: all; }
-
-.confirm-box {
-  background: var(--header); border-radius: 14px;
-  padding: 24px 22px; width: 280px; text-align: center;
-}
-.confirm-box h3 { font-size: 15px; margin-bottom: 8px; }
-.confirm-box p  { font-size: 13px; color: var(--sub); margin-bottom: 20px; line-height: 1.5; }
-.confirm-btns   { display: flex; gap: 10px; }
-.btn-danger { flex:1; background: var(--danger); color:#fff; border:none; border-radius:8px; padding:11px; font-size:14px; font-weight:600; cursor:pointer; }
-.btn-safe   { flex:1; background: var(--hover); color:var(--text); border:none; border-radius:8px; padding:11px; font-size:14px; cursor:pointer; }
-
-.spinner { display: flex; align-items: center; justify-content: center; padding: 40px; }
-.spinner::after {
-  content: ''; width: 28px; height: 28px;
-  border: 3px solid var(--divider); border-top-color: var(--accent);
-  border-radius: 50%; animation: spin .7s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 480px) { .tarea-card { margin: 8px; } }
+.spinner { display:flex; align-items:center; justify-content:center; padding:40px; }
+.spinner::after { content:''; width:28px; height:28px; border:3px solid var(--divider); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
 
 <div id="app">
-
   <!-- PANTALLA A: COLABORADORES -->
   <div class="screen" id="screen-colab">
     <div class="header">
       <h1>🗂 TaskBot</h1>
-      <button class="icon-btn" title="Nuevo colaborador" onclick="abrirModalColab(null)">➕</button>
+      <button class="icon-btn" onclick="abrirModalColab(null)">➕</button>
     </div>
     <div class="list" id="list-colab"><div class="spinner"></div></div>
   </div>
@@ -284,41 +160,26 @@ html, body {
       <button class="back-btn" onclick="volverColab()">‹</button>
       <div id="avatar-header" class="avatar" style="width:36px;height:36px;font-size:13px;"></div>
       <h1 id="header-nombre" style="margin-left:4px;">Tareas</h1>
-      <!-- Editar colaborador -->
-      <button class="icon-btn" title="Editar colaborador" onclick="abrirModalColab(colabActual)" style="color:var(--accent)">✎</button>
-      <!-- Borrar colaborador — solo visible si tareas=0 -->
-      <button class="icon-btn" id="btn-borrar-colab" title="Borrar colaborador" onclick="confirmarBorrarColab()" style="color:var(--danger)">🗑</button>
+      <button class="icon-btn" onclick="abrirModalColab(colabActual)" style="color:var(--accent)">✎</button>
+      <button class="icon-btn" id="btn-borrar-colab" onclick="confirmarBorrarColab()" style="color:var(--danger)">🗑</button>
     </div>
     <div class="list" id="list-tareas"><div class="spinner"></div></div>
   </div>
-
 </div>
 
 <button class="fab hidden" id="fab-tarea" onclick="abrirModalTarea(null)">✎</button>
 
-<!-- MODAL COLABORADOR (nuevo y editar) -->
+<!-- MODAL COLABORADOR -->
 <div class="modal-overlay" id="modal-colab" onclick="cerrarModalColab(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h2 id="modal-colab-titulo">👤 Nuevo colaborador</h2>
     <input type="hidden" id="in-colab-id"/>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
-      <div class="field">
-        <label>Nombre</label>
-        <input type="text" id="in-nombre" placeholder="Juan"/>
-      </div>
-      <div class="field">
-        <label>Apellido</label>
-        <input type="text" id="in-apellido" placeholder="García"/>
-      </div>
+    <div class="row2">
+      <div class="field"><label>Nombre</label><input type="text" id="in-nombre" placeholder="Juan"/></div>
+      <div class="field"><label>Apellido</label><input type="text" id="in-apellido" placeholder="García"/></div>
     </div>
-    <div class="field">
-      <label>WhatsApp (cód. país + número)</label>
-      <input type="tel" id="in-telefono" placeholder="5491112345678"/>
-    </div>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="in-email" placeholder="juan@empresa.com"/>
-    </div>
+    <div class="field"><label>WhatsApp (cód. país + número)</label><input type="tel" id="in-telefono" placeholder="5491112345678"/></div>
+    <div class="field"><label>Email</label><input type="email" id="in-email" placeholder="juan@empresa.com"/></div>
     <div class="modal-btns">
       <button class="btn-cancel"  onclick="cerrarModalColab(null)">Cancelar</button>
       <button class="btn-primary" onclick="guardarColab()">Guardar</button>
@@ -326,23 +187,79 @@ html, body {
   </div>
 </div>
 
-<!-- MODAL TAREA (nueva y editar) -->
+<!-- MODAL TAREA -->
 <div class="modal-overlay" id="modal-tarea" onclick="cerrarModalTarea(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h2 id="modal-tarea-titulo">✎ Nueva tarea</h2>
     <input type="hidden" id="in-tarea-id"/>
-    <div class="field">
-      <label>Subject</label>
-      <input type="text" id="in-subject" placeholder="¿Qué necesitás?" maxlength="120"/>
-    </div>
-    <div class="field">
-      <label>Detalle</label>
-      <textarea id="in-detalle" placeholder="Descripción, contexto, links..."></textarea>
-    </div>
+    <div class="field"><label>Subject</label><input type="text" id="in-subject" placeholder="¿Qué necesitás?" maxlength="120"/></div>
+    <div class="field"><label>Detalle</label><textarea id="in-detalle" placeholder="Descripción, contexto, links..."></textarea></div>
     <div class="modal-btns">
       <button class="btn-cancel"  onclick="cerrarModalTarea(null)">Cancelar</button>
-      <button class="btn-primary" onclick="guardarTarea()">Guardar tarea</button>
+      <button class="btn-primary" onclick="guardarTarea()">Guardar</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL SCHEDULE -->
+<div class="modal-overlay" id="modal-sched" onclick="cerrarModalSched(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h2>🕐 Programar WS</h2>
+    <input type="hidden" id="sched-tarea-id"/>
+    <input type="hidden" id="sched-id"/>
+
+    <!-- Selector de modo -->
+    <div class="sched-modos">
+      <button class="modo-btn" id="modo-fecha"   onclick="setModo('fecha')">📅 Fecha</button>
+      <button class="modo-btn" id="modo-mes"     onclick="setModo('mes')">📆 Mes</button>
+      <button class="modo-btn" id="modo-semana"  onclick="setModo('semana')">🗓 Semana</button>
+    </div>
+
+    <!-- MODO FECHA -->
+    <div class="sched-sec" id="sec-fecha">
+      <div class="row2">
+        <div class="field"><label>Fecha dd/mm/aaaa</label><input type="text" id="s-fecha" placeholder="21/03/2026" maxlength="10"/></div>
+        <div class="field"><label>Hora HH:MM</label><input type="text" id="s-hora-f" placeholder="09:30" maxlength="5"/></div>
+      </div>
+    </div>
+
+    <!-- MODO MES -->
+    <div class="sched-sec" id="sec-mes">
+      <div class="row2">
+        <div class="field"><label>Día del mes (1-31)</label><input type="number" id="s-diames" min="1" max="31" placeholder="21"/></div>
+        <div class="field"><label>Hora HH:MM</label><input type="text" id="s-hora-m" placeholder="09:30" maxlength="5"/></div>
+      </div>
+    </div>
+
+    <!-- MODO SEMANA -->
+    <div class="sched-sec" id="sec-semana">
+      <div class="row2">
+        <div class="field">
+          <label>Día</label>
+          <select id="s-diasem">
+            <option value="">— elegir —</option>
+            <option>Lu</option><option>Ma</option><option>Mi</option>
+            <option>Ju</option><option>Vi</option><option>Sa</option><option>Do</option>
+          </select>
+        </div>
+        <div class="field"><label>Hora HH:MM</label><input type="text" id="s-hora-s" placeholder="09:30" maxlength="5"/></div>
+      </div>
+    </div>
+
+    <!-- Toggle repite -->
+    <div class="toggle-row">
+      <label>🔁 Repite</label>
+      <label class="toggle">
+        <input type="checkbox" id="s-repite"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModalSched(null)">Cancelar</button>
+      <button class="btn-warn"   onclick="guardarSchedule()">💾 Guardar</button>
+    </div>
+    <button class="btn-danger-full" id="btn-borrar-sched" onclick="borrarSchedule()" style="display:none">🗑 Quitar programación</button>
   </div>
 </div>
 
@@ -364,8 +281,9 @@ html, body {
 var API_URL = 'https://script.google.com/macros/s/AKfycbxw-68nGGiJVxzHMCCAzFX0YsUzSN58T_mtdvLsB1VSSYA-4oWPHCZ1hoV16Fxap5p_fg/exec';
 var TOKEN   = 'taskbot2026victor';
 
-var colabActual = null;
-var confirmCb   = null;
+var colabActual  = null;
+var confirmCb    = null;
+var modoActual   = 'fecha';
 
 // ── API ───────────────────────────────────────────────────────
 async function apiGet(params) {
@@ -373,7 +291,6 @@ async function apiGet(params) {
   var r = await fetch(API_URL + '?' + q);
   return r.json();
 }
-
 async function apiPost(body) {
   var params = new URLSearchParams({ token: TOKEN, data: JSON.stringify(body) });
   var r = await fetch(API_URL + '?' + params);
@@ -385,8 +302,8 @@ async function cargarColabs() {
   var el = document.getElementById('list-colab');
   el.innerHTML = '<div class="spinner"></div>';
   try {
-    var d = await apiGet({ action: 'getColaboradores' });
-    if (d.status !== 'ok') { el.innerHTML = '<p style="padding:20px;color:var(--danger)">Error: ' + d.msg + '</p>'; return; }
+    var d = await apiGet({ action:'getColaboradores' });
+    if (d.status !== 'ok') { el.innerHTML = '<p style="padding:20px;color:var(--danger)">Error: '+d.msg+'</p>'; return; }
     if (!d.data.length) {
       el.innerHTML = '<div class="empty"><div class="icon">👥</div><div>Sin colaboradores<br><small>Tocá ➕ para agregar</small></div></div>';
       return;
@@ -396,19 +313,15 @@ async function cargarColabs() {
         <div class="avatar" style="background:${avatarColor(c.nombre+c.apellido)}">${iniciales(c.nombre,c.apellido)}</div>
         <div class="colab-info">
           <div class="colab-name">${c.apellido}, ${c.nombre}</div>
-          <div class="colab-sub">${c.telefono || ''} ${c.email ? '· '+c.email : ''}</div>
+          <div class="colab-sub">${c.telefono||''} ${c.email?'· '+c.email:''}</div>
         </div>
         <span class="badge ${c.tareas===0?'zero':''}">${c.tareas}</span>
-      </div>
-    `).join('');
-  } catch(e) {
-    el.innerHTML = '<p style="padding:20px;color:var(--danger)">Sin conexión</p>';
-  }
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<p style="padding:20px;color:var(--danger)">Sin conexión</p>'; }
 }
 
 function abrirModalColab(colab) {
-  // colab = null → nuevo, colab = objeto → editar
-  document.getElementById('in-colab-id').value  = colab ? colab.id : '';
+  document.getElementById('in-colab-id').value  = colab ? colab.id       : '';
   document.getElementById('in-nombre').value    = colab ? colab.nombre   : '';
   document.getElementById('in-apellido').value  = colab ? colab.apellido : '';
   document.getElementById('in-telefono').value  = colab ? colab.telefono : '';
@@ -417,53 +330,41 @@ function abrirModalColab(colab) {
   document.getElementById('modal-colab').classList.add('open');
   setTimeout(() => document.getElementById('in-nombre').focus(), 300);
 }
-
 function cerrarModalColab(e) {
   if (e && e.target !== document.getElementById('modal-colab')) return;
   document.getElementById('modal-colab').classList.remove('open');
 }
-
 async function guardarColab() {
-  var id       = document.getElementById('in-colab-id').value;
-  var nombre   = document.getElementById('in-nombre').value.trim();
-  var apellido = document.getElementById('in-apellido').value.trim();
-  var telefono = document.getElementById('in-telefono').value.trim();
-  var email    = document.getElementById('in-email').value.trim();
-  if (!nombre || !apellido) { toast('Nombre y apellido son obligatorios', '⚠️'); return; }
+  var id=document.getElementById('in-colab-id').value, nombre=document.getElementById('in-nombre').value.trim(),
+      apellido=document.getElementById('in-apellido').value.trim(), telefono=document.getElementById('in-telefono').value.trim(),
+      email=document.getElementById('in-email').value.trim();
+  if (!nombre||!apellido) { toast('Nombre y apellido obligatorios','⚠️'); return; }
   document.getElementById('modal-colab').classList.remove('open');
   try {
-    var action = id ? 'editarColaborador' : 'nuevoColaborador';
-    var r = await apiPost({ action, id, nombre, apellido, telefono, email });
-    if (r.status === 'ok') {
-      toast(id ? 'Colaborador actualizado' : 'Colaborador guardado', '✅');
+    var r = await apiPost({ action: id?'editarColaborador':'nuevoColaborador', id, nombre, apellido, telefono, email });
+    if (r.status==='ok') {
+      toast(id?'Colaborador actualizado':'Colaborador guardado','✅');
       if (id) {
-        // actualizar colabActual y header
-        colabActual = Object.assign(colabActual, { nombre, apellido, telefono, email });
-        document.getElementById('header-nombre').textContent = apellido + ', ' + nombre;
-        var av = document.getElementById('avatar-header');
-        av.textContent     = iniciales(nombre, apellido);
-        av.style.background = avatarColor(nombre + apellido);
-      } else {
-        cargarColabs();
-      }
-    } else toast('Error: ' + r.msg, '❌');
-  } catch(e) { toast('Sin conexión', '❌'); }
+        colabActual = Object.assign(colabActual,{nombre,apellido,telefono,email});
+        document.getElementById('header-nombre').textContent = apellido+', '+nombre;
+        var av=document.getElementById('avatar-header');
+        av.textContent=iniciales(nombre,apellido); av.style.background=avatarColor(nombre+apellido);
+      } else cargarColabs();
+    } else toast('Error: '+r.msg,'❌');
+  } catch(e) { toast('Sin conexión','❌'); }
 }
 
 // ── TAREAS ────────────────────────────────────────────────────
 function abrirTareas(colab) {
   colabActual = colab;
-  document.getElementById('header-nombre').textContent = colab.apellido + ', ' + colab.nombre;
-  var av = document.getElementById('avatar-header');
-  av.textContent       = iniciales(colab.nombre, colab.apellido);
-  av.style.background  = avatarColor(colab.nombre + colab.apellido);
-  // Mostrar/ocultar botón borrar según tareas
-  document.getElementById('btn-borrar-colab').style.display = colab.tareas === 0 ? '' : 'none';
+  document.getElementById('header-nombre').textContent = colab.apellido+', '+colab.nombre;
+  var av=document.getElementById('avatar-header');
+  av.textContent=iniciales(colab.nombre,colab.apellido); av.style.background=avatarColor(colab.nombre+colab.apellido);
+  document.getElementById('btn-borrar-colab').style.display = colab.tareas===0?'':'none';
   document.getElementById('screen-tareas').classList.add('active');
   document.getElementById('fab-tarea').classList.remove('hidden');
   cargarTareas(colab.id);
 }
-
 function volverColab() {
   document.getElementById('screen-tareas').classList.remove('active');
   document.getElementById('fab-tarea').classList.add('hidden');
@@ -471,163 +372,224 @@ function volverColab() {
 }
 
 async function cargarTareas(colId) {
-  var el = document.getElementById('list-tareas');
-  el.innerHTML = '<div class="spinner"></div>';
+  var el=document.getElementById('list-tareas');
+  el.innerHTML='<div class="spinner"></div>';
   try {
-    var d = await apiGet({ action: 'getTareas', id: colId });
-    if (d.status !== 'ok') { el.innerHTML = '<p style="padding:20px;color:var(--danger)">Error: '+d.msg+'</p>'; return; }
-    // Actualizar visibilidad del botón borrar según tareas actuales
-    document.getElementById('btn-borrar-colab').style.display = d.data.length === 0 ? '' : 'none';
+    var d = await apiGet({ action:'getTareas', id:colId });
+    if (d.status!=='ok') { el.innerHTML='<p style="padding:20px;color:var(--danger)">Error: '+d.msg+'</p>'; return; }
+    document.getElementById('btn-borrar-colab').style.display = d.data.length===0?'':'none';
     if (!d.data.length) {
-      el.innerHTML = '<div class="empty"><div class="icon">✅</div><div>Sin tareas pendientes</div></div>';
+      el.innerHTML='<div class="empty"><div class="icon">✅</div><div>Sin tareas pendientes</div></div>';
       return;
     }
-    el.innerHTML = d.data.map(t => `
-      <div class="tarea-card" id="tc-${t.id}">
+    el.innerHTML = d.data.map(t => {
+      var hasSched = t.sched && t.sched.estado === 'activo';
+      return `
+      <div class="tarea-card ${hasSched?'has-sched':''}" id="tc-${t.id}">
         <div class="tarea-subject">${escHtml(t.subject)}</div>
         <div class="tarea-detalle">${escHtml(t.detalle)}</div>
+        ${hasSched ? `<div class="sched-badge">🕐 ${resumeSched(t.sched)}</div>` : ''}
         <div class="tarea-btns">
-          <button class="btn btn-ws"   onclick="enviarWS('${escAttr(t.subject)}','${escAttr(t.detalle)}')">💬 WS</button>
-          <button class="btn btn-mail" onclick="enviarMail('${escAttr(t.subject)}','${escAttr(t.detalle)}')">✉ Mail</button>
-          <button class="btn btn-edit" onclick="abrirModalTarea(${JSON.stringify(t).replace(/"/g,'&quot;')})">✎</button>
-          <button class="btn btn-del"  onclick="confirmarBorrarTarea('${t.id}','${escAttr(t.subject)}')">🗑</button>
+          <button class="btn btn-ws"    onclick="enviarWS('${escAttr(t.subject)}','${escAttr(t.detalle)}')">💬 WS</button>
+          <button class="btn btn-mail"  onclick="enviarMail('${escAttr(t.subject)}','${escAttr(t.detalle)}')">✉ Mail</button>
+          <button class="btn btn-edit"  onclick="abrirModalTarea(${JSON.stringify(t).replace(/"/g,'&quot;')})">✎</button>
+          <button class="btn btn-sched ${hasSched?'active':''}" onclick="abrirModalSched('${t.id}',${hasSched?JSON.stringify(t.sched).replace(/"/g,'&quot;'):'null'})">🕐</button>
+          <button class="btn btn-del"   onclick="confirmarBorrarTarea('${t.id}','${escAttr(t.subject)}')">🗑</button>
         </div>
-      </div>
-    `).join('');
-  } catch(e) {
-    el.innerHTML = '<p style="padding:20px;color:var(--danger)">Sin conexión</p>';
-  }
+      </div>`; }).join('');
+  } catch(e) { el.innerHTML='<p style="padding:20px;color:var(--danger)">Sin conexión</p>'; }
+}
+
+function resumeSched(s) {
+  if (!s) return '';
+  var hora = s.hora || '09:30';
+  var rep  = s.repite==='si' ? '🔁' : '×1';
+  if (s.modo==='fecha')  return '📅 '+s.fecha+' '+hora+' '+rep;
+  if (s.modo==='mes')    return '📆 día '+s.diaMes+' '+hora+' '+rep;
+  if (s.modo==='semana') return '🗓 '+s.diaSemana+' '+hora+' '+rep;
+  return '';
 }
 
 function abrirModalTarea(tarea) {
-  // tarea = null → nueva, tarea = objeto → editar
-  document.getElementById('in-tarea-id').value  = tarea ? tarea.id : '';
-  document.getElementById('in-subject').value   = tarea ? tarea.subject : '';
-  document.getElementById('in-detalle').value   = tarea ? tarea.detalle : '';
+  document.getElementById('in-tarea-id').value = tarea ? tarea.id      : '';
+  document.getElementById('in-subject').value  = tarea ? tarea.subject : '';
+  document.getElementById('in-detalle').value  = tarea ? tarea.detalle : '';
   document.getElementById('modal-tarea-titulo').textContent = tarea ? '✎ Editar tarea' : '✎ Nueva tarea';
   document.getElementById('modal-tarea').classList.add('open');
   setTimeout(() => document.getElementById('in-subject').focus(), 300);
 }
-
 function cerrarModalTarea(e) {
   if (e && e.target !== document.getElementById('modal-tarea')) return;
   document.getElementById('modal-tarea').classList.remove('open');
 }
-
 async function guardarTarea() {
-  var id      = document.getElementById('in-tarea-id').value;
-  var subject = document.getElementById('in-subject').value.trim();
-  var detalle = document.getElementById('in-detalle').value.trim();
-  if (!subject) { toast('El subject es obligatorio', '⚠️'); return; }
+  var id=document.getElementById('in-tarea-id').value, subject=document.getElementById('in-subject').value.trim(), detalle=document.getElementById('in-detalle').value.trim();
+  if (!subject) { toast('Subject obligatorio','⚠️'); return; }
   if (!colabActual) return;
   document.getElementById('modal-tarea').classList.remove('open');
   try {
-    var action = id ? 'editarTarea' : 'nuevaTarea';
-    var r = await apiPost({ action, id, colId: colabActual.id, subject, detalle });
-    if (r.status === 'ok') {
-      toast(id ? 'Tarea actualizada' : 'Tarea guardada', '✅');
-      cargarTareas(colabActual.id);
-    } else toast('Error: ' + r.msg, '❌');
-  } catch(e) { toast('Sin conexión', '❌'); }
+    var r = await apiPost({ action:id?'editarTarea':'nuevaTarea', id, colId:colabActual.id, subject, detalle });
+    if (r.status==='ok') { toast(id?'Tarea actualizada':'Tarea guardada','✅'); cargarTareas(colabActual.id); }
+    else toast('Error: '+r.msg,'❌');
+  } catch(e) { toast('Sin conexión','❌'); }
 }
-
 async function borrarTarea(id) {
   try {
     var r = await apiPost({ action:'borrarTarea', id });
-    if (r.status === 'ok') {
-      var el = document.getElementById('tc-'+id);
+    if (r.status==='ok') {
+      var el=document.getElementById('tc-'+id);
       if (el) { el.style.opacity='0'; el.style.transform='translateX(-30px)'; el.style.transition='all .25s'; setTimeout(()=>{ el.remove(); cargarTareas(colabActual.id); },250); }
-      toast('Tarea borrada', '🗑');
+      toast('Tarea borrada','🗑');
     } else toast('Error: '+r.msg,'❌');
+  } catch(e) { toast('Sin conexión','❌'); }
+}
+
+// ── SCHEDULE ──────────────────────────────────────────────────
+function setModo(modo) {
+  modoActual = modo;
+  ['fecha','mes','semana'].forEach(m => {
+    document.getElementById('modo-'+m).classList.toggle('sel', m===modo);
+    document.getElementById('sec-'+m).classList.toggle('visible', m===modo);
+  });
+}
+
+function abrirModalSched(tareaId, sched) {
+  document.getElementById('sched-tarea-id').value = tareaId;
+  document.getElementById('sched-id').value = sched ? sched.id : '';
+  // Reset
+  ['s-fecha','s-hora-f','s-hora-m','s-hora-s'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('s-diames').value='';
+  document.getElementById('s-diasem').value='';
+  document.getElementById('s-repite').checked=false;
+
+  if (sched) {
+    setModo(sched.modo||'fecha');
+    document.getElementById('s-repite').checked = sched.repite==='si';
+    if (sched.modo==='fecha')  { document.getElementById('s-fecha').value=sched.fecha||''; document.getElementById('s-hora-f').value=sched.hora||''; }
+    if (sched.modo==='mes')    { document.getElementById('s-diames').value=sched.diaMes||''; document.getElementById('s-hora-m').value=sched.hora||''; }
+    if (sched.modo==='semana') { document.getElementById('s-diasem').value=sched.diaSemana||''; document.getElementById('s-hora-s').value=sched.hora||''; }
+    document.getElementById('btn-borrar-sched').style.display='';
+  } else {
+    setModo('fecha');
+    document.getElementById('btn-borrar-sched').style.display='none';
+  }
+  document.getElementById('modal-sched').classList.add('open');
+}
+function cerrarModalSched(e) {
+  if (e && e.target !== document.getElementById('modal-sched')) return;
+  document.getElementById('modal-sched').classList.remove('open');
+}
+
+async function guardarSchedule() {
+  var tareaId = document.getElementById('sched-tarea-id').value;
+  var id      = document.getElementById('sched-id').value;
+  var repite  = document.getElementById('s-repite').checked ? 'si' : 'no';
+  var payload = { action:'guardarSchedule', tareaId, id, modo:modoActual, repite,
+                  telefono: colabActual.telefono };
+
+  if (modoActual==='fecha') {
+    var fecha=document.getElementById('s-fecha').value.trim();
+    var hora =document.getElementById('s-hora-f').value.trim()||'09:30';
+    if (!fecha) { toast('Ingresá la fecha','⚠️'); return; }
+    Object.assign(payload,{fecha,hora});
+  } else if (modoActual==='mes') {
+    var diaMes=document.getElementById('s-diames').value;
+    var hora  =document.getElementById('s-hora-m').value.trim()||'09:30';
+    if (!diaMes) { toast('Ingresá el día del mes','⚠️'); return; }
+    Object.assign(payload,{diaMes,hora});
+  } else {
+    var diaSemana=document.getElementById('s-diasem').value;
+    var hora     =document.getElementById('s-hora-s').value.trim()||'09:30';
+    if (!diaSemana) { toast('Elegí el día','⚠️'); return; }
+    Object.assign(payload,{diaSemana,hora});
+  }
+
+  document.getElementById('modal-sched').classList.remove('open');
+  try {
+    var r = await apiPost(payload);
+    if (r.status==='ok') { toast('Programación guardada','🕐'); cargarTareas(colabActual.id); }
+    else toast('Error: '+r.msg,'❌');
+  } catch(e) { toast('Sin conexión','❌'); }
+}
+
+async function borrarSchedule() {
+  var id = document.getElementById('sched-id').value;
+  if (!id) return;
+  document.getElementById('modal-sched').classList.remove('open');
+  try {
+    var r = await apiPost({ action:'borrarSchedule', id });
+    if (r.status==='ok') { toast('Programación eliminada','🗑'); cargarTareas(colabActual.id); }
+    else toast('Error: '+r.msg,'❌');
   } catch(e) { toast('Sin conexión','❌'); }
 }
 
 // ── ENVÍOS ────────────────────────────────────────────────────
 async function enviarWS(subject, detalle) {
-  if (!colabActual || !colabActual.telefono) { toast('Sin número de teléfono', '⚠️'); return; }
-  var mensaje = '📋 *' + subject + '*\n\n' + detalle;
+  if (!colabActual||!colabActual.telefono) { toast('Sin número de teléfono','⚠️'); return; }
+  var mensaje='📋 *'+subject+'*\n\n'+detalle;
   try {
-    var r = await apiPost({ action:'encolarWS', telefono: colabActual.telefono, mensaje });
-    if (r.status === 'ok') toast('WS en cola de envío', '💬');
+    var r = await apiPost({ action:'encolarWS', telefono:colabActual.telefono, mensaje });
+    if (r.status==='ok') toast('WS en cola de envío','💬');
     else toast('Error: '+r.msg,'❌');
   } catch(e) { toast('Sin conexión','❌'); }
 }
-
 async function enviarMail(subject, detalle) {
-  if (!colabActual || !colabActual.email) { toast('Sin email registrado', '⚠️'); return; }
+  if (!colabActual||!colabActual.email) { toast('Sin email registrado','⚠️'); return; }
   try {
-    var r = await apiPost({ action:'enviarMail', email: colabActual.email, subject, detalle });
-    if (r.status === 'ok') toast('Mail enviado', '✉️');
-    else toast('Error: ' + r.msg, '❌');
-  } catch(e) { toast('Sin conexión', '❌'); }
+    var r = await apiPost({ action:'enviarMail', email:colabActual.email, subject, detalle });
+    if (r.status==='ok') toast('Mail enviado','✉️');
+    else toast('Error: '+r.msg,'❌');
+  } catch(e) { toast('Sin conexión','❌'); }
 }
 
 // ── BORRAR COLABORADOR ────────────────────────────────────────
 function confirmarBorrarColab() {
   if (!colabActual) return;
-  showConfirm(
-    '¿Borrar colaborador?',
-    colabActual.nombre + ' ' + colabActual.apellido + ' será eliminado.',
+  showConfirm('¿Borrar colaborador?', colabActual.nombre+' '+colabActual.apellido+' será eliminado.',
     async () => {
       try {
-        var r = await apiPost({ action:'borrarColaborador', id: colabActual.id });
-        if (r.status === 'ok') { toast('Colaborador borrado','🗑'); volverColab(); }
+        var r = await apiPost({ action:'borrarColaborador', id:colabActual.id });
+        if (r.status==='ok') { toast('Colaborador borrado','🗑'); volverColab(); }
         else toast('Error: '+r.msg,'❌');
       } catch(e) { toast('Sin conexión','❌'); }
-    }
-  );
+    });
 }
-
 function confirmarBorrarTarea(id, subject) {
-  showConfirm('¿Borrar tarea?', '"'+subject+'"', () => borrarTarea(id));
+  showConfirm('¿Borrar tarea?','"'+subject+'"',()=>borrarTarea(id));
 }
 
 // ── CONFIRM ───────────────────────────────────────────────────
-function showConfirm(titulo, msg, cb) {
-  document.getElementById('confirm-title').textContent = titulo;
-  document.getElementById('confirm-msg').textContent   = msg;
-  confirmCb = cb;
+function showConfirm(titulo,msg,cb) {
+  document.getElementById('confirm-title').textContent=titulo;
+  document.getElementById('confirm-msg').textContent=msg;
+  confirmCb=cb;
   document.getElementById('confirm-overlay').classList.add('open');
 }
 function cerrarConfirm(ok) {
   document.getElementById('confirm-overlay').classList.remove('open');
-  if (ok && confirmCb) confirmCb();
-  confirmCb = null;
+  if (ok&&confirmCb) confirmCb();
+  confirmCb=null;
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
-var toastTimer = null;
-function toast(msg, icon) {
-  var el = document.getElementById('toast');
-  el.textContent = (icon ? icon + '  ' : '') + msg;
+var toastTimer=null;
+function toast(msg,icon) {
+  var el=document.getElementById('toast');
+  el.textContent=(icon?icon+'  ':'')+msg;
   el.classList.add('show');
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
-function iniciales(nombre, apellido) {
-  return ((nombre||'?')[0] + (apellido||'?')[0]).toUpperCase();
-}
-var COLORS = ['#00897b','#0097a7','#5e35b1','#3949ab','#1e88e5','#d81b60','#e53935','#6d4c41','#546e7a','#43a047'];
-function avatarColor(str) {
-  var h = 0;
-  for (var i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h<<5)-h);
-  return COLORS[Math.abs(h) % COLORS.length];
-}
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function escAttr(s) {
-  return String(s||'').replace(/'/g,'&#39;').replace(/\n/g,' ');
-}
+function iniciales(n,a){ return ((n||'?')[0]+(a||'?')[0]).toUpperCase(); }
+var COLORS=['#00897b','#0097a7','#5e35b1','#3949ab','#1e88e5','#d81b60','#e53935','#6d4c41','#546e7a','#43a047'];
+function avatarColor(s){ var h=0; for(var i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return COLORS[Math.abs(h)%COLORS.length]; }
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s){ return String(s||'').replace(/'/g,'&#39;').replace(/\n/g,' '); }
 
-document.getElementById('in-subject').addEventListener('keydown', e => {
-  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('in-detalle').focus(); }
-});
-document.getElementById('in-apellido').addEventListener('keydown', e => {
-  if (e.key==='Enter') document.getElementById('in-telefono').focus();
-});
+document.getElementById('in-subject').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('in-detalle').focus();} });
+document.getElementById('in-apellido').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('in-telefono').focus(); });
 
 cargarColabs();
 </script>
