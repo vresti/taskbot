@@ -400,7 +400,7 @@ async function cargarTareas(colId) {
           <button class="btn btn-ws"    onclick="enviarWS('${escAttr(t.subject)}','${escAttr(t.detalle)}')">💬 WS</button>
           <button class="btn btn-mail"  onclick="enviarMail('${escAttr(t.subject)}','${escAttr(t.detalle)}')">✉ Mail</button>
           <button class="btn btn-edit"  onclick="abrirModalTarea(${JSON.stringify(t).replace(/"/g,'&quot;')})">✎</button>
-          <button class="btn btn-sched ${hasSched?'active':''}" onclick="abrirModalSched('${t.id}',${hasSched?JSON.stringify(t.sched).replace(/"/g,'&quot;'):'null'})">🕐</button>
+          <button class="btn btn-sched ${hasSched?'active':''}" onclick="abrirModalSched('${t.id}','${hasSched?btoa(unescape(encodeURIComponent(JSON.stringify(t.sched)))):'null'}')">🕐</button>
           <button class="btn btn-del"   onclick="confirmarBorrarTarea('${t.id}','${escAttr(t.subject)}')">🗑</button>
         </div>
       </div>`; }).join('');
@@ -460,10 +460,13 @@ function setModo(modo) {
   });
 }
 
-function abrirModalSched(tareaId, sched) {
+function abrirModalSched(tareaId, schedStr) {
+  var sched = null;
+  if (schedStr && schedStr !== 'null') {
+    try { sched = JSON.parse(decodeURIComponent(escape(atob(schedStr)))); } catch(e) {}
+  }
   document.getElementById('sched-tarea-id').value = tareaId;
   document.getElementById('sched-id').value = sched ? sched.id : '';
-  // Reset
   ['s-fecha','s-hora-f','s-hora-m','s-hora-s'].forEach(id => document.getElementById(id).value='');
   document.getElementById('s-diames').value='';
   document.getElementById('s-diasem').value='';
