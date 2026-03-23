@@ -215,13 +215,20 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
       <button class="modo-btn" id="modo-semana"  onclick="setModo('semana')">🗓 Semana</button>
     </div>
 
-    <!-- MODO FECHA -->
-    <div class="sched-sec" id="sec-fecha">
-      <div class="row2">
-        <div class="field"><label>Fecha dd/mm/aaaa</label><input type="text" id="s-fecha" placeholder="21/03/2026" maxlength="10"/></div>
-        <div class="field"><label>Hora HH:MM</label><input type="text" id="s-hora-f" placeholder="09:30" maxlength="5"/></div>
-      </div>
+<!-- MODO FECHA -->
+<div class="sched-sec" id="sec-fecha">
+  <div class="row2">
+    <div class="field">
+      <label>Fecha dd/mm/aaaa</label>
+      <input type="text" id="s-fecha" placeholder="21/03/2026" maxlength="10"
+        oninput="this.value=this.value.replace(/[^\d\/]/g,'').replace(/^(\d{2})(\d)/,'$1/$2').replace(/^(\d{2}\/\d{2})(\d)/,'$1/$2')"/>
     </div>
+    <div class="field">
+      <label>Hora HH:MM</label>
+      <input type="text" id="s-hora-f" placeholder="09:30" maxlength="5"/>
+    </div>
+  </div>
+</div>
 
     <!-- MODO MES -->
     <div class="sched-sec" id="sec-mes">
