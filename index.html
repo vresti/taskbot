@@ -488,7 +488,7 @@ async function guardarSchedule() {
                   telefono: colabActual.telefono };
 
   if (modoActual==='fecha') {
-    var fecha=document.getElementById('s-fecha').value.trim();
+    var fecha = document.getElementById('s-fecha').value.trim().replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
     var hora =document.getElementById('s-hora-f').value.trim()||'09:30';
     if (!fecha) { toast('Ingresá la fecha','⚠️'); return; }
     Object.assign(payload,{fecha,hora});
