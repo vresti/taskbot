@@ -635,7 +635,7 @@ function toast(msg,icon) {
   toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ── HELPERS ───────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────--
 function iniciales(n,a){ return ((n||'?')[0]+(a||'?')[0]).toUpperCase(); }
 var COLORS=['#00897b','#0097a7','#5e35b1','#3949ab','#1e88e5','#d81b60','#e53935','#6d4c41','#546e7a','#43a047'];
 function avatarColor(s){ var h=0; for(var i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return COLORS[Math.abs(h)%COLORS.length]; }
