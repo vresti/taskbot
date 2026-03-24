@@ -580,11 +580,7 @@ async function borrarSchedule() {
 // ── ENVÍOS ────────────────────────────────────────────────────
 async function enviarWS(subject, detalle) {
   if (!colabActual||!colabActual.telefono) { toast('Sin número de teléfono','⚠️'); return; }
-  var mensaje='⚡ *'+subject+'*
-
-'+detalle+'
-
-— Tasks-on.com ⚡';
+  var mensaje='⚡ *'+subject+'*\n\n'+detalle+'\n\n— Tasks-on.com ⚡';
   try {
     var r = await apiPost({ action:'encolarWS', telefono:colabActual.telefono, mensaje });
     if (r.status==='ok') toast('WS en cola de envío','💬');
