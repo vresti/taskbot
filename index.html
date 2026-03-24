@@ -40,7 +40,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .icon-btn { background:none; border:none; color:var(--sub); font-size:20px; cursor:pointer; padding:6px; border-radius:50%; transition:background .2s,color .2s; line-height:1; }
 .icon-btn:hover { background:var(--hover); color:var(--text); }
 
-.list { flex:1; overflow-y:auto; overscroll-behavior:contain; }
+.list { flex:1; overflow-y:auto; overscroll-behavior:contain; padding-bottom:80px; }
 .list::-webkit-scrollbar { width:4px; }
 .list::-webkit-scrollbar-thumb { background:var(--hover); border-radius:4px; }
 
@@ -635,7 +635,7 @@ function toast(msg,icon) {
   toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ── HELPERS ───────────────────────────────────────────────────--
+// ── HELPERS ───────────────────────────────────────────────────
 function iniciales(n,a){ return ((n||'?')[0]+(a||'?')[0]).toUpperCase(); }
 var COLORS=['#00897b','#0097a7','#5e35b1','#3949ab','#1e88e5','#d81b60','#e53935','#6d4c41','#546e7a','#43a047'];
 function avatarColor(s){ var h=0; for(var i=0;i<s.length;i++) h=s.charCodeAt(i)+((h<<5)-h); return COLORS[Math.abs(h)%COLORS.length]; }
