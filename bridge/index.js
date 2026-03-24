@@ -1,73 +1,94 @@
-// ============================================================
-//  TASKBOT BRIDGE — WhatsApp personal
-//  Puerto 3001 · PM2 name: taskbot-bridge
-//  Victor · tasks-on.com · 2026
-// ============================================================
-
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode  = require('qrcode-terminal');
 const express = require('express');
 const cors    = require('cors');
 
-// ── CONFIG ────────────────────────────────────────────────────
 var API_URL = 'https://script.google.com/macros/s/AKfycbxw-68nGGiJVxzHMCCAzFX0YsUzSN58T_mtdvLsB1VSSYA-4oWPHCZ1hoV16Fxap5p_fg/exec';
 var TOKEN   = 'taskbot2026victor';
 var PUERTO  = 3001;
 
-// ── WhatsApp client ──────────────────────────────────────────
-const client = new Client({
-  authStrategy: new LocalAuth({ clientId: 'taskbot' }),
-  puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
-});
+var isReady   = false;
+var pollTimer = null;
 
-client.on('qr', qr => {
-  console.log('\n📱 Escanear con WhatsApp → Dispositivos vinculados:');
-  qrcode.generate(qr, { small: true });
-});
+function crearCliente() {
+  const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+      headless: true,
+      args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-setuid-sandbox']
+    }
+  });
 
-client.on('ready', () => {
-  console.log('✅ TASKBOT BRIDGE CONECTADO — ' + new Date().toLocaleString());
-  setInterval(enviarPendientes, 5000);
-});
+  client.on('qr', qr => {
+    console.log('\n=== ESCANEÁ ESTE QR CON WHATSAPP ===\n');
+    qrcode.generate(qr, { small: true });
+  });
 
-client.on('disconnected', reason => {
-  console.log('⚠️  Bridge desconectado:', reason);
-});
+  client.on('ready', () => {
+    isReady = true;
+    console.log('\n✅ TASKBOT BRIDGE CONECTADO — ' + new Date().toLocaleString());
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(() => enviarPendientes(client), 5000);
+  });
 
-client.initialize();
+  client.on('disconnected', reason => {
+    isReady = false;
+    console.log('⚠️  Bridge desconectado:', reason, '— reconectando en 10s...');
+    if (pollTimer) clearInterval(pollTimer);
+    setTimeout(() => {
+      try { client.destroy(); } catch(e) {}
+      setTimeout(crearCliente, 3000);
+    }, 10000);
+  });
 
-// ── Poll y envío de pendientes ────────────────────────────────
-async function enviarPendientes() {
+  client.on('auth_failure', () => {
+    isReady = false;
+    console.log('❌ Auth failure — reconectando...');
+    if (pollTimer) clearInterval(pollTimer);
+    setTimeout(() => {
+      try { client.destroy(); } catch(e) {}
+      setTimeout(crearCliente, 3000);
+    }, 5000);
+  });
+
+  client.initialize();
+  return client;
+}
+
+async function enviarPendientes(client) {
+  if (!isReady) return;
   try {
-    var url = API_URL + '?action=getPendienteBridge&token=' + TOKEN;
+    var url  = API_URL + '?action=getPendienteBridge&token=' + TOKEN;
     var res  = await fetch(url);
     var data = await res.json();
-
     if (data.status !== 'ok') return;
-
-    var tel     = data.telefono.replace(/\D/g, '');
-    var chatId  = tel + '@c.us';
-    var mensaje = data.mensaje;
-
-    await client.sendMessage(chatId, mensaje);
-    console.log('📤 WS enviado → ' + tel + ' | ' + mensaje.substring(0, 60));
+    var tel      = data.telefono.replace(/\D/g, '');
+    var numberId = await client.getNumberId(tel);
+    if (!numberId) { console.error('❌ Número no encontrado en WA: ' + tel); return; }
+    await client.sendMessage(numberId._serialized, data.mensaje);
+    console.log('📤 WS enviado → ' + tel);
   } catch (err) {
-    // silencioso — logs solo errores reales
-    if (err.message && !err.message.includes('vacio')) {
+    if (!err.message) return;
+    if (err.message.includes('detached Frame') || err.message.includes('Target closed')) {
+      console.log('⚠️  Chromium caído — marcando como no listo');
+      isReady = false;
+    } else if (!err.message.includes('vacio') && !err.message.includes('DOCTYPE')) {
       console.error('❌ enviarPendientes:', err.message);
     }
   }
 }
 
-// ── Express — health check ────────────────────────────────────
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.get('/status', (req, res) => {
-  res.json({ status: 'ok', bridge: 'taskbot', ts: new Date().toISOString() });
+  res.json({ status: 'ok', ready: isReady, bridge: 'taskbot', ts: new Date().toISOString() });
 });
 
 app.listen(PUERTO, () => {
   console.log('🚀 Taskbot Bridge escuchando en puerto ' + PUERTO);
 });
+
+console.log('Iniciando WhatsApp Web...');
+crearCliente();
