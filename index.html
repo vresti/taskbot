@@ -42,16 +42,17 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .login-input {
   width:100%; padding:12px 16px; border-radius:8px; border:none;
   background:var(--input); color:var(--text); font-size:15px;
-  outline:none; margin-bottom:14px; font-family:var(--font);
+  outline:none; margin-bottom:12px; font-family:var(--font);
 }
 .login-input::placeholder { color:var(--sub); }
 .login-btn {
   width:100%; padding:12px; border-radius:8px; border:none;
   background:var(--accent); color:#fff; font-size:15px; font-weight:600;
   cursor:pointer; transition:opacity .2s; font-family:var(--font);
+  margin-top:4px;
 }
-.login-btn:hover   { opacity:.85; }
-.login-btn:disabled{ opacity:.5; cursor:not-allowed; }
+.login-btn:hover    { opacity:.85; }
+.login-btn:disabled { opacity:.5; cursor:not-allowed; }
 .login-error { color:var(--danger); font-size:13px; margin-top:10px; min-height:18px; }
 
 /* ── APP ────────────────────────────────────────────────────── */
@@ -75,6 +76,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .colab-row { display:flex; align-items:center; gap:14px; padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--divider); transition:background .15s; user-select:none; }
 .colab-row:hover  { background:var(--hover); }
 .colab-row:active { background:var(--divider); }
+.colab-row.opaco  { opacity:.35; cursor:default; pointer-events:none; }
 
 .avatar { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700; color:#fff; flex-shrink:0; }
 .colab-info { flex:1; min-width:0; }
@@ -83,6 +85,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 
 .badge { background:var(--accent); color:#fff; font-size:11px; font-weight:700; padding:2px 7px; border-radius:10px; min-width:20px; text-align:center; }
 .badge.zero { background:var(--hover); color:var(--sub); }
+.badge.pending { background:var(--warn); color:#000; }
 
 .tarea-card { background:var(--card); margin:10px 12px; border-radius:var(--radius); padding:12px 14px; border-left:3px solid var(--accent); }
 .tarea-card.has-sched { border-left-color:var(--warn); }
@@ -102,7 +105,6 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .btn-del   { background:transparent; color:var(--danger); border:1px solid var(--danger); }
 .btn-edit, .btn-sched, .btn-del { padding:5px 8px; }
 
-/* Search bar */
 .search-bar { display:none; flex:1; align-items:center; gap:8px; }
 .search-bar.open { display:flex; }
 .search-bar input { flex:1; background:var(--input); border:none; border-radius:20px; padding:8px 14px; color:var(--text); font-size:14px; font-family:var(--font); outline:none; }
@@ -183,9 +185,9 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
   <div class="login-box">
     <div class="login-icon">⚡</div>
     <div class="login-title">Tasks-on</div>
-    <div class="login-sub">Ingresá tu email para acceder</div>
-    <input type="email" class="login-input" id="login-email" placeholder="tu@email.com"
-      onkeypress="if(event.key==='Enter') hacerLogin()"/>
+    <div class="login-sub">Ingresá tus datos para acceder</div>
+    <input type="email"    class="login-input" id="login-email"    placeholder="tu@email.com"     onkeypress="if(event.key==='Enter') document.getElementById('login-pass').focus()"/>
+    <input type="password" class="login-input" id="login-pass"     placeholder="Contraseña"       onkeypress="if(event.key==='Enter') hacerLogin()"/>
     <button class="login-btn" id="login-btn" onclick="hacerLogin()">Ingresar</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -323,6 +325,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 <script>
 var API_URL = 'https://script.google.com/macros/s/AKfycbxw-68nGGiJVxzHMCCAzFX0YsUzSN58T_mtdvLsB1VSSYA-4oWPHCZ1hoV16Fxap5p_fg/exec';
 var TOKEN   = 'taskbot2026victor';
+var SESSION_KEY = 'taskbot_session';
 
 var colabActual  = null;
 var confirmCb    = null;
@@ -341,24 +344,53 @@ async function apiPost(body) {
   return r.json();
 }
 
+// ── SESIÓN ────────────────────────────────────────────────────
+function guardarSesion(usuario) {
+  var sesion = {
+    usuario:   usuario,
+    timestamp: Date.now(),
+    expira:    usuario.expira || 28800
+  };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(sesion)); } catch(e) {}
+}
+
+function leerSesion() {
+  try {
+    var raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    var edad = (Date.now() - s.timestamp) / 1000;
+    if (edad > s.expira) { localStorage.removeItem(SESSION_KEY); return null; }
+    return s.usuario;
+  } catch(e) { return null; }
+}
+
+function entrarConUsuario(usuario) {
+  usuarioActual = usuario;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app-title').textContent = '⚡ ' + usuario.nombre.split(' ')[0];
+  cargarColabs();
+}
+
 // ── LOGIN ─────────────────────────────────────────────────────
 async function hacerLogin() {
-  var email  = document.getElementById('login-email').value.trim().toLowerCase();
-  var errEl  = document.getElementById('login-error');
-  var btn    = document.getElementById('login-btn');
+  var email    = document.getElementById('login-email').value.trim().toLowerCase();
+  var password = document.getElementById('login-pass').value.trim();
+  var errEl    = document.getElementById('login-error');
+  var btn      = document.getElementById('login-btn');
   errEl.textContent = '';
-  if (!email) { errEl.textContent = 'Ingresá tu email'; return; }
+  if (!email)    { errEl.textContent = 'Ingresá tu email'; return; }
+  if (!password) { errEl.textContent = 'Ingresá tu contraseña'; return; }
   btn.textContent = '...'; btn.disabled = true;
   try {
-    var r = await apiGet({ action:'getUsuario', email });
+    var r = await apiGet({ action:'getUsuario', email, password });
     if (r.status === 'ok') {
-      usuarioActual = { email, nombre:r.nombre, rol:r.rol, grupos:r.grupos };
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      document.getElementById('app-title').textContent = '⚡ ' + r.nombre.split(' ')[0];
-      cargarColabs();
+      var usuario = { email, nombre:r.nombre, rol:r.rol, grupos:r.grupos, expira:r.expira };
+      guardarSesion(usuario);
+      entrarConUsuario(usuario);
     } else {
-      errEl.textContent = '❌ Email no autorizado';
+      errEl.textContent = r.msg === 'password incorrecto' ? '❌ Contraseña incorrecta' : '❌ Email no autorizado';
     }
   } catch(e) {
     errEl.textContent = '❌ Error de conexión';
@@ -389,14 +421,16 @@ function renderColabs(lista) {
   el.innerHTML = lista.map(c => {
     var hasSched  = !!c.proxSched;
     var schedInfo = hasSched ? '<span class="sched-dot" title="Schedule activo"></span>' : '';
+    var badgeClass = c.opaco ? 'badge pending' : (c.tareas===0 ? 'badge zero' : 'badge');
+    var badgeText  = c.opaco ? '⏳' : c.tareas;
     return `
-      <div class="colab-row" onclick="abrirTareas(${JSON.stringify(c).replace(/"/g,'&quot;')})">
+      <div class="colab-row${c.opaco?' opaco':''}" ${c.opaco?'':'onclick="abrirTareas('+JSON.stringify(c).replace(/"/g,'&quot;')+')"'}>
         <div class="avatar" style="background:${avatarColor(c.nombre+c.apellido)}">${iniciales(c.nombre,c.apellido)}</div>
         <div class="colab-info">
           <div class="colab-name">${c.apellido}, ${c.nombre}${schedInfo}</div>
           <div class="colab-sub">${c.telefono||''} ${c.email?'· '+c.email:''}</div>
         </div>
-        <span class="badge ${c.tareas===0?'zero':''}">${c.tareas}</span>
+        <span class="${badgeClass}">${badgeText}</span>
       </div>`;
   }).join('');
 }
@@ -488,7 +522,7 @@ async function cargarTareas(colId) {
       return;
     }
     el.innerHTML = d.data.map(t => {
-      var hasSched = t.sched && t.sched.estado === 'activo';
+      var hasSched  = t.sched && t.sched.estado === 'activo';
       var schedData = hasSched ? btoa(unescape(encodeURIComponent(JSON.stringify(t.sched)))) : 'null';
       return `
       <div class="tarea-card ${hasSched?'has-sched':''}" id="tc-${t.id}">
@@ -571,7 +605,6 @@ function abrirModalSched(tareaId, schedStr) {
   document.getElementById('s-diames').value='';
   document.getElementById('s-diasem').value='';
   document.getElementById('s-repite').checked=false;
-
   if (sched) {
     setModo(sched.modo||'fecha');
     document.getElementById('s-repite').checked = sched.repite==='si';
@@ -589,13 +622,11 @@ function cerrarModalSched(e) {
   if (e && e.target !== document.getElementById('modal-sched')) return;
   document.getElementById('modal-sched').classList.remove('open');
 }
-
 async function guardarSchedule() {
   var tareaId = document.getElementById('sched-tarea-id').value;
   var id      = document.getElementById('sched-id').value;
   var repite  = document.getElementById('s-repite').checked ? 'si' : 'no';
   var payload = { action:'guardarSchedule', tareaId, id, modo:modoActual, repite, telefono:colabActual.telefono };
-
   if (modoActual==='fecha') {
     var fecha=document.getElementById('s-fecha').value.trim();
     var hora =document.getElementById('s-hora-f').value.trim()||'09:30';
@@ -619,7 +650,6 @@ async function guardarSchedule() {
     else toast('Error: '+r.msg,'❌');
   } catch(e) { toast('Sin conexión','❌'); }
 }
-
 async function borrarSchedule() {
   var id = document.getElementById('sched-id').value;
   if (!id) return;
@@ -698,6 +728,14 @@ function escAttr(s){ return String(s||'').replace(/'/g,'&#39;').replace(/\n/g,' 
 
 document.getElementById('in-subject').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.getElementById('in-detalle').focus();} });
 document.getElementById('in-apellido').addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('in-telefono').focus(); });
+
+// ── INIT — verificar sesión al arrancar ───────────────────────
+(function() {
+  var sesion = leerSesion();
+  if (sesion) {
+    entrarConUsuario(sesion);
+  }
+})();
 </script>
 </body>
 </html>
